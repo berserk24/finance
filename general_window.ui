@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>general_window</class>
+ <widget class="QMainWindow" name="general_window">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Главное окно</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>-1</number>
+      </property>
+      <property name="documentMode">
+       <bool>true</bool>
+      </property>
+      <property name="tabsClosable">
+       <bool>false</bool>
+      </property>
+      <property name="movable">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>Файл</string>
+    </property>
+    <addaction name="action_exit"/>
+   </widget>
+   <widget class="QMenu" name="menu_ref">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>Справочники</string>
+    </property>
+    <addaction name="action_ref_firm"/>
+    <addaction name="action_show_rss"/>
+    <addaction name="action_ref_client"/>
+    <addaction name="action_ref_tarif"/>
+   </widget>
+   <widget class="QMenu" name="menu_3">
+    <property name="title">
+     <string>Справка</string>
+    </property>
+    <addaction name="action_4"/>
+   </widget>
+   <widget class="QMenu" name="menu_4">
+    <property name="title">
+     <string>Операции</string>
+    </property>
+    <addaction name="action_load_pp"/>
+    <addaction name="action_pp"/>
+    <addaction name="action_balans_rs"/>
+    <addaction name="action_balans_client"/>
+    <addaction name="action_client_pays"/>
+   </widget>
+   <widget class="QMenu" name="menu_settings">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>Настройки</string>
+    </property>
+    <addaction name="action_setting"/>
+    <addaction name="action_users"/>
+   </widget>
+   <widget class="QMenu" name="menu_report">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>Отчёты</string>
+    </property>
+    <addaction name="action_rep_client"/>
+   </widget>
+   <widget class="QMenu" name="menu_view">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>Вид</string>
+    </property>
+    <addaction name="action_column"/>
+   </widget>
+   <addaction name="menu"/>
+   <addaction name="menu_ref"/>
+   <addaction name="menu_4"/>
+   <addaction name="menu_view"/>
+   <addaction name="menu_settings"/>
+   <addaction name="menu_report"/>
+   <addaction name="menu_3"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="action">
+   <property name="text">
+    <string>Открыть</string>
+   </property>
+  </action>
+  <action name="action_exit">
+   <property name="text">
+    <string>Выход</string>
+   </property>
+  </action>
+  <action name="action_show_rss">
+   <property name="text">
+    <string>Расчётные счета</string>
+   </property>
+  </action>
+  <action name="action_4">
+   <property name="text">
+    <string>О программе</string>
+   </property>
+  </action>
+  <action name="action_ref_firm">
+   <property name="text">
+    <string>Справочник организаций</string>
+   </property>
+  </action>
+  <action name="action_ref_client">
+   <property name="text">
+    <string>Справочник контрагентов</string>
+   </property>
+  </action>
+  <action name="action_ref_tarif">
+   <property name="text">
+    <string>Справочник тарифов</string>
+   </property>
+  </action>
+  <action name="action_setting">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Программы</string>
+   </property>
+  </action>
+  <action name="action_load_pp">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Загрузка платёжных поручений</string>
+   </property>
+  </action>
+  <action name="action_pp">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Платёжные поручения</string>
+   </property>
+  </action>
+  <action name="action_balans_client">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Баланс счетов контагентов</string>
+   </property>
+  </action>
+  <action name="action_client_pays">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Движения по счётам контрагентов</string>
+   </property>
+  </action>
+  <action name="action_balans_rs">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Баланс расчётных счетов</string>
+   </property>
+  </action>
+  <action name="action_rep_client">
+   <property name="text">
+    <string>Отчёт по контрагенту</string>
+   </property>
+  </action>
+  <action name="action_client_group">
+   <property name="text">
+    <string>Группы контрагентов</string>
+   </property>
+  </action>
+  <action name="action_users">
+   <property name="text">
+    <string>Пользователи</string>
+   </property>
+  </action>
+  <action name="action_column">
+   <property name="text">
+    <string>Колонки таблицы</string>
+   </property>
+  </action>
+  <action name="action_group_balans">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Баланс по группам контрагентов</string>
+   </property>
+  </action>
+  <action name="action_print">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Печать</string>
+   </property>
+  </action>
+  <action name="action_save_as">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Сохранить как...</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
