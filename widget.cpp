@@ -7,19 +7,14 @@ Widget::Widget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    settings = new QSettings(QSettings::UserScope, "obnal", "obnal", this);
+    settings = new QSettings(QSettings::UserScope, "finance", "finance", this);
 
     get_settings();
 
+    show();
+
     db = new QSqlDatabase;
 
-    hash = new QCryptographicHash(QCryptographicHash::Md5);
-
-    if (func_connect_db())
-    {
-        create_database();
-        show();
-    }
     connect(ui->pushButton_enter, SIGNAL(clicked()), this, SLOT(slot_login()));
     connect(ui->lineEdit_login, SIGNAL(returnPressed()), ui->lineEdit_passwd, SLOT(setFocus()));
     connect(ui->lineEdit_passwd, SIGNAL(returnPressed()), ui->pushButton_enter, SLOT(click()));
@@ -53,30 +48,12 @@ void Widget::set_settings()
     }
 }
 
-bool Widget::func_connect_db()
-{
-    *db = QSqlDatabase::addDatabase("QSQLITE");
-    db->setDatabaseName(QApplication::applicationDirPath()+"/database.db");
-    if (!db->open())
-    {
-        QString error_db = db->lastError().text();
-        QMessageBox::critical(this, "error", error_db);
-        db->close();
-        exit(1);
-        return false;
-    }
-    else
-    {
-        query = new QSqlQuery(*db);
-        return true;
-    }
-}
-
 void Widget::create_database()
 {
-    if (db->tables().size() < 11)
+    qDebug() << db->tables().size() << endl;
+    if (db->tables().size() < 10)
     {
-        query->exec("BEGIN IMMEDIATE TRANSACTION");
+        /*query->exec("BEGIN IMMEDIATE TRANSACTION");
         //Создаём таблицу пользоваталей
         {
             query->exec("CREATE TABLE 'main'.'users' ( \
@@ -120,51 +97,110 @@ void Widget::create_database()
                                             ) \
                     ");
         }
-
+*/
         //Создаём таблицу да/нет
         {
-            query->exec("CREATE TABLE 'main'.'yes_no' ( \
-                                    'id' TEXT NOT NULL, \
-                                    'name' TEXT NOT NULL, \
-                                    UNIQUE (id COLLATE NOCASE ASC)) \
-                    ");
+            query->exec("   CREATE TABLE yes_no ("
+                                        "id VARCHAR(5) NOT NULL, "
+                                        "data VARCHAR(3) NOT NULL, "
+
+                                        "PRIMARY KEY (id), "
+                                        "UNIQUE      (data));"
+                        );
         }
         {
-            query->exec("   INSERT INTO    yes_no   (id, name)"
+            query->exec("   INSERT INTO    yes_no   (id, data) "
                             "VALUES ('false', 'Нет')");
-            query->exec("   INSERT INTO    yes_no   (id, name)"
+            query->exec("   INSERT INTO    yes_no   (id, data) "
                             "VALUES ('true', 'Да')");
         }
 
         //Создаём таблицу типов движений платёжек
         {
-            query->exec("CREATE TABLE 'main'.'pp_in_out' ( \
-                                    'id' TEXT NOT NULL, \
-                                    'name' TEXT NOT NULL, \
-                                    UNIQUE (id COLLATE NOCASE ASC)) \
-                    ");
+            query->exec("CREATE TABLE pp_in_out ("
+                                    "id SMALLINT NOT NULL, "
+                                    "data VARCHAR(7) NOT NULL, "
+                                    "PRIMARY KEY (id), "
+                                    "UNIQUE (data));"
+                        );
         }
 
         //Создаём типы платёжек
         {
-            query->exec("   INSERT INTO    pp_in_out   (id, name)"
+            query->exec("   INSERT INTO    pp_in_out   (id, data)"
                             "VALUES (1, 'Расход')");
-            query->exec("   INSERT INTO    pp_in_out   (id, name)"
+            query->exec("   INSERT INTO    pp_in_out   (id, data)"
                             "VALUES (2, 'Приход')");
-            query->exec("   INSERT INTO    pp_in_out   (id, name)"
+            query->exec("   INSERT INTO    pp_in_out   (id, data)"
                             "VALUES (3, 'Перевод')");
         }
 
         //Создаём таблицу типов движений платёжек
         {
-            query->exec("CREATE TABLE 'main'.'pp_type' ( \
-                                    'id' TEXT NOT NULL, \
-                                    'name' TEXT NOT NULL, \
-                                    UNIQUE (id COLLATE NOCASE ASC)) \
-                    ");
+            query->exec("CREATE TABLE pp_type ("
+                                    "id SMALLINT NOT NULL, "
+                                    "data VARCHAR(19) NOT NULL, "
+                                    "PRIMARY KEY (id), "
+                                    "UNIQUE (data));"
+                        );
         }
 
-        //Создаём таблицу настроек
+        //Создаём типы платёжек
+        {
+            query->exec("   INSERT INTO    pp_type   (id, data)"
+                            "VALUES (0, 'Платежное поручение')");
+            query->exec("   INSERT INTO    pp_type   (id, data)"
+                            "VALUES (1, 'Мемориальный ордер')");
+            query->exec("   INSERT INTO    pp_type   (id, data)"
+                            "VALUES (2, 'Банковский ордер')");
+        }
+
+        //Создаём таблицу фирм
+        {
+            query->exec("CREATE TABLE firms ( "
+                                    "id INTEGER NOT NULL, "
+                                    "name VARCHAR(70) NOT NULL, "
+                                    "inn VARCHAR(12) NOT NULL, "
+                                    "stroy VARCHAR(5) NOT NULL, "
+                                    "PRIMARY KEY (id), "
+                                    "UNIQUE (name), "
+                                    "UNIQUE (inn))"
+                        );
+        }
+
+        //Создаём фирму 0
+        {
+            query->exec("INSERT INTO    firms "
+                                        "(id, name, inn, stroy)  "
+                        "VALUES ('0', 'Нет', '000000000000', 'false' )"
+                        );
+        }
+
+        //Создаём таблицу расчётных счетов
+        {
+            query->exec("CREATE TABLE rss "
+                        "(id INTEGER NOT NULL, "
+                        " name VARCHAR(50) NOT NULL, "
+                        " bik VARCHAR(9) NOT NULL, "
+                        " number VARCHAR(20) NOT NULL, "
+                        " firm  INTEGER NOT NULL, "
+                        "PRIMARY KEY (id), "
+                        "UNIQUE (bik, number), "
+                        "UNIQUE (name))"
+                        );
+        }
+
+        //Создаём таблицу баланса РС
+        {
+            query->exec("CREATE TABLE rss_balans ( "
+                                    "id INTEGER NOT NULL, "
+                                    "last_date TIMESTAMP NOT NULL, "
+                                    "balans NUMERIC(18,2) NOT NULL, "
+                                    "PRIMARY KEY (id)) "
+                        );
+        }
+
+/*        //Создаём таблицу настроек
         {
             query->exec("CREATE TABLE 'main'.'settings' ( \
                                     'id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, \
@@ -179,60 +215,7 @@ void Widget::create_database()
             query->exec("INSERT INTO settings (value, name) VALUES ('1111111111', 'pp_collumn')");
         }
 
-        //Создаём типы платёжек
-        {
-            query->exec("   INSERT INTO    pp_type   (id, name)"
-                            "VALUES (0, 'Платежное поручение')");
-            query->exec("   INSERT INTO    pp_type   (id, name)"
-                            "VALUES (1, 'Мемориальный ордер')");
-            query->exec("   INSERT INTO    pp_type   (id, name)"
-                            "VALUES (2, 'Банковский ордер')");
-        }
 
-        //Создаём таблицу фирм
-        {
-            query->exec("CREATE TABLE 'main'.'firm' ( \
-                                    'id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, \
-                                    'name' TEXT NOT NULL, \
-                                    'inn' TEXT NOT NULL, \
-                                    'stroy' TEXT NOT NULL, \
-                                    UNIQUE (name COLLATE NOCASE ASC), \
-                                    UNIQUE (inn COLLATE NOCASE ASC)) \
-                    ");
-        }
-
-        //Создаём фирму 0
-        {
-            query->exec("   INSERT INTO    firm   ( \
-                                                    id, name, inn, stroy  \
-                                                ) \
-                        VALUES ( \
-                                            '0', 'Нет', '000000000000', 'false' )" \
-                    );
-        }
-
-        //Создаём таблицу расчётных счетов
-        {
-            query->exec("CREATE TABLE 'main'.'rss' ( \
-                                    'id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, \
-                                    'name' TEXT NOT NULL, \
-                                    'bik' TEXT NOT NULL, \
-                                    'number' TEXT NOT NULL, \
-                                    'firm'  TEXT NOT NULL, \
-                                    UNIQUE (bik, number COLLATE NOCASE ASC), \
-                                    UNIQUE (name COLLATE NOCASE ASC)) \
-                    ");
-        }
-
-        //Создаём таблицу баланса РС
-        {
-            query->exec("CREATE TABLE 'main'.'rss_balans' ( \
-                                    'id' TEXT NOT NULL, \
-                                    'date' TEXT NOT NULL, \
-                                    'balans' TEXT NOT NULL, \
-                                    UNIQUE (id COLLATE NOCASE ASC)) \
-                    ");
-        }
 
         //Создаём таблицу контрагентов
         {
@@ -423,42 +406,34 @@ void Widget::create_database()
                     ");
         }
 
-        query->exec("COMMIT");
+        query->exec("COMMIT");*/
     }
 }
 
 void Widget::slot_login()
 {
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
-    query->exec("SELECT id, passwd FROM users WHERE name='" + ui->lineEdit_login->text() + "'");
-    QString passwd = "";
-    if (query->last())
+    *db = QSqlDatabase::addDatabase("QIBASE");
+    db->setDatabaseName(QApplication::applicationDirPath()+"/database.fdb");
+    db->setHostName("localhost");
+    db->setUserName(ui->lineEdit_login->text());
+    db->setPassword(ui->lineEdit_passwd->text());
+    if (!db->open())
     {
-        query->first();
-        passwd = query->value(1).toString();
-    }
-
-    if (func_gen_hash(ui->lineEdit_passwd->text()) == passwd)
-    {
-        user_id = new int;
-        *user_id = query->value(0).toInt();
-        gen_window = new general_window(0, user_id);
-        hide();
-        set_settings();
-        gen_window->show();
+        QString error_db = db->lastError().text();
+        QMessageBox::critical(this, "error", error_db);
+        db->close();
+        return;
     }
     else
     {
-        QMessageBox::critical(this, "error", "User or password not found");
+        query = new QSqlQuery(*db);
+        create_database();
+        //gen_window = new general_window(this, 0);
+        hide();
+        set_settings();
+        //gen_window->show();
+        return;
     }
-    query->exec("COMMIT");
-}
-
-QString Widget::func_gen_hash(QString str)
-{
-    hash->reset();
-    hash->addData(str.toUtf8());
-    return hash->result().toHex();
 }
 
 Widget::~Widget()
