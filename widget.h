@@ -28,13 +28,8 @@ private:
     general_window *gen_window;
     QSqlDatabase *db;
     QSqlQuery *query;
-    QCryptographicHash *hash;
-    int *user_id;
     QSettings *settings;
-    bool func_create_database();
-    bool func_connect_db();
     void create_database();
-    QString func_gen_hash(QString);
     void get_settings();
     void set_settings();
 

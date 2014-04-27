@@ -6,6 +6,7 @@
 #include <QSqlQuery>
 #include <QtSql/QSqlError>
 #include <QSqlQueryModel>
+#include <QSqlDatabase>
 #include <QMessageBox>
 #include <QDate>
 #include <QDebug>
@@ -19,7 +20,7 @@ class class_rss_form : public QWidget
     Q_OBJECT
 
 public:
-    explicit class_rss_form(QWidget *parent = 0);
+    explicit class_rss_form(QWidget *parent, QSqlDatabase *db1);
     ~class_rss_form();
 
 public slots:
@@ -34,6 +35,7 @@ private:
     Ui::class_rss_form *ui;
     QSqlQuery *query, *firm_query;
     QSqlQueryModel *model;
+    QSqlDatabase *db;
 
 
     void clear_field();

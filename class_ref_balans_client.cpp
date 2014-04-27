@@ -14,9 +14,9 @@ class_ref_balans_client::class_ref_balans_client(QWidget *parent) :
     ui->lineEdit_summ->setMaximumWidth(150);
     ui->lineEdit_margin->setMaximumWidth(50);
 
-    QValidator *validator = new QRegExpValidator(QRegExp("^[1-9]\\d{0,8}|^[1-9]\\d{0,8},[0-9][0-9]|^0,[0-9][0-9]"), this);
+    QValidator *validator = new QRegExpValidator(QRegExp("^[1-9]\\d{0,8}|^[1-9]\\d{0,8}.[0-9][0-9]|^0.[0-9][0-9]"), this);
     ui->lineEdit_summ->setValidator(validator);
-    QValidator *validator2 = new QRegExpValidator(QRegExp("[0-9][0-9]|[0-9],[0-9][0-9]|[0-9][0-9],[0-9][0-9]|[0-9][0-9],[0-9]"), this);
+    QValidator *validator2 = new QRegExpValidator(QRegExp("[0-9][0-9]|[0-9].[0-9][0-9]|[0-9][0-9].[0-9][0-9]|[0-9][0-9].[0-9]"), this);
     ui->lineEdit_margin->setValidator(validator2);
 
     slot_select_client();
@@ -84,7 +84,7 @@ void class_ref_balans_client::slot_select_client()
     ui->comboBox_client->clear();
     ui->comboBox_to_client->clear();
     ui->comboBox_client->addItem("Все", 0);
-    query->exec("SELECT id, name FROM client");
+    query->exec("SELECT id, name FROM clients");
     query->first();
     ui->comboBox_client->addItem(query->value(1).toString(), QVariant(query->value(0).toInt()));
     ui->comboBox_to_client->addItem(query->value(1).toString(), QVariant(query->value(0).toInt()));
@@ -99,10 +99,10 @@ void class_ref_balans_client::slot_select_client()
 //Заполняем таблицу
 void class_ref_balans_client::slot_select_table()
 {
-    *str_query = "SELECT client.name, balans.balans, client.id "
+    *str_query = "SELECT clients.name, balans.balans, clients.id "
                    "FROM client_balans balans "
-                   "LEFT JOIN client ON client.id = balans.id "
-                   "WHERE client.name LIKE '";
+                   "LEFT JOIN clients ON clients.id = balans.id "
+                   "WHERE clients.name LIKE '";
     if (ui->comboBox_client->currentText() == "Все")
     {
         *str_query = *str_query + "%'";
@@ -126,7 +126,7 @@ void class_ref_balans_client::slot_set_margin()
 {
     if (ui->tableView->selectionModel()->selectedIndexes().size() == 3)
     {
-        query->prepare("SELECT t_obnal, t_nalic FROM client WHERE id = ?");
+        query->prepare("SELECT t_obnal, t_nalic FROM clients WHERE id = ?");
         query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(2).data().toString());
         query->exec();
         query->first();

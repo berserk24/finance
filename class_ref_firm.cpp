@@ -54,40 +54,38 @@ void class_ref_firm::slot_enable_add()
 //Добавляем фирму
 void class_ref_firm::slot_add_firm()
 {
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
     if (ui->tableView->selectionModel()->hasSelection())
     {
-        query->prepare("UPDATE firm SET name = ?, inn = ?, stroy = ? WHERE id = ?");
+        query->prepare("UPDATE firms SET name = ?, inn = ?, stroy = ? WHERE id = ?");
         query->addBindValue(ui->lineEdit_name->text());
         query->addBindValue(ui->lineEdit_inn->text());
         if (ui->checkBox_stroy->isChecked())
         {
-            query->addBindValue("true");
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("false");
+            query->addBindValue(0);
         }
         query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
     }
     else
     {
-        query->prepare("INSERT INTO firm (name, inn, stroy)"
+        query->prepare("INSERT INTO firms (name, inn, stroy)"
                             "VALUES (?, ?, ?)");
         query->addBindValue(ui->lineEdit_name->text());
         query->addBindValue(ui->lineEdit_inn->text());
         if (ui->checkBox_stroy->isChecked())
         {
-            query->addBindValue("true");
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("false");
+            query->addBindValue(0);
         }
     }
     query->exec();
     query->clear();
-    query->exec("COMMIT");
     ui->lineEdit_name->setText("");
     ui->lineEdit_inn->setText("");
     ui->checkBox_stroy->setChecked(false);
@@ -151,9 +149,9 @@ void class_ref_firm::slot_enable_del()
 //Обновляем форму
 void class_ref_firm::refresh_tableview()
 {
-    model->setQuery("SELECT firm.id, firm.name, firm.inn, yn.name FROM firm "
-                    "LEFT JOIN yes_no yn ON yn.id = firm.stroy "
-                    "WHERE firm.id > 0");
+    model->setQuery("SELECT firms.id, firms.name, firms.inn, yn.data FROM firms "
+                    "LEFT JOIN yes_no yn ON yn.id = firms.stroy "
+                    "WHERE firms.id > 0");
     model->setHeaderData(1,Qt::Horizontal, "Название");
     model->setHeaderData(2,Qt::Horizontal, "ИНН");
     model->setHeaderData(3,Qt::Horizontal, "Строй");
@@ -168,22 +166,21 @@ void class_ref_firm::refresh_tableview()
 //Удаляем фирму
 void class_ref_firm::slot_del_firm()
 {
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
-    query->prepare("SELECT id FROM rss WHERE firm = ?");
-    query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
-    query->exec();
-    if (query->first())
-    {
-        QMessageBox::critical(this, "Ошибка", "Имеются расчётные счета привязанные к этой фирме.");
-    }
-    else
-    {
-        query->prepare("DELETE FROM firm WHERE id = ?");
-        query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
-        query->exec();
-        refresh_tableview();
-    }
-    query->exec("COMMIT");
+    int ret = QMessageBox::warning(this, tr("Внимание"),
+                                        tr("Удаление фирмы удалит все связанные расчётные счета, платёжные поручения и операции над клиентами, связанными с этой организацией.\nВы уверены что хотите удалить?"),
+                                        QMessageBox::Yes
+                                        | QMessageBox::Cancel,
+                                        QMessageBox::Yes);
+        switch (ret) {
+           case QMessageBox::Yes:
+            {
+            query->prepare("DELETE FROM firms WHERE id = ?");
+            query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
+            query->exec();
+            refresh_tableview();
+            return;
+            }
+        }
 }
 
 void class_ref_firm::slot_show_add_rs()

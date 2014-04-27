@@ -1,16 +1,18 @@
 #include "general_window.h"
 #include "ui_general_window.h"
 
-general_window::general_window(QWidget *parent, int *u_id) :
+general_window::general_window(QWidget *parent, QSqlDatabase *db1) :
     QMainWindow(parent),
     ui(new Ui::general_window)
 {
     ui->setupUi(this);
     this->setWindowState(Qt::WindowMaximized);
 
-    user_id = *u_id;
+    db = db1;
 
-    slot_set_enable_menu(user_id);
+    user_id = 0;
+
+    //slot_set_enable_menu(user_id);
 
     i_rs = i_firm = i_client = i_tarif = i_load_pp = i_pp = i_balans_client =
             i_balans_rs = i_client_pay = i_manage_users = i_report_client = -1;
@@ -108,7 +110,7 @@ void general_window::show_rss_form()
 {
     if (i_rs == -1)
     {
-        rss_form = new class_rss_form;
+        rss_form = new class_rss_form(0, db);
         i_rs = ui->tabWidget->addTab(rss_form, QString("Расчётные счета"));
         ui->tabWidget->setCurrentIndex(i_rs);
     }
@@ -136,7 +138,7 @@ void general_window::show_ref_client()
 {
     if (i_client == -1)
     {
-        ref_client = new class_ref_client;
+        ref_client = new class_ref_client(0, db);
         i_client = ui->tabWidget->addTab(ref_client, QString("Контрагенты"));
         ui->tabWidget->setCurrentIndex(i_client);
     }
@@ -164,7 +166,7 @@ void general_window::slot_show_load_pp()
 {
     if (i_load_pp == -1)
     {
-        load_pp = new class_load_pp;
+        load_pp = new class_load_pp(0, db);
         i_load_pp = ui->tabWidget->addTab(load_pp, QString("Загрузка ПП"));
         ui->tabWidget->setCurrentIndex(i_load_pp);
     }

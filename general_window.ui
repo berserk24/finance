@@ -50,7 +50,7 @@
    </widget>
    <widget class="QMenu" name="menu_ref">
     <property name="enabled">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
     <property name="title">
      <string>Справочники</string>
@@ -78,7 +78,7 @@
    </widget>
    <widget class="QMenu" name="menu_settings">
     <property name="enabled">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
     <property name="title">
      <string>Настройки</string>
@@ -88,7 +88,7 @@
    </widget>
    <widget class="QMenu" name="menu_report">
     <property name="enabled">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
     <property name="title">
      <string>Отчёты</string>
@@ -158,7 +158,7 @@
   </action>
   <action name="action_load_pp">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>Загрузка платёжных поручений</string>
@@ -166,7 +166,7 @@
   </action>
   <action name="action_pp">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>Платёжные поручения</string>
@@ -174,7 +174,7 @@
   </action>
   <action name="action_balans_client">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>Баланс счетов контагентов</string>
@@ -182,7 +182,7 @@
   </action>
   <action name="action_client_pays">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>Движения по счётам контрагентов</string>
@@ -190,7 +190,7 @@
   </action>
   <action name="action_balans_rs">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>Баланс расчётных счетов</string>

@@ -1,11 +1,13 @@
 #include "class_load_pp.h"
 #include "ui_class_load_pp.h"
 
-class_load_pp::class_load_pp(QWidget *parent) :
+class_load_pp::class_load_pp(QWidget *parent, QSqlDatabase *db1) :
     QWidget(parent),
     ui(new Ui::class_load_pp)
 {
     ui->setupUi(this);
+
+    db = db1;
 
     query = new QSqlQuery;
 
@@ -123,7 +125,6 @@ bool class_load_pp::verify_pp(QString file)
     bik = get_bik(in);
     in->seek(0);
     QString line, var, value;
-    int gg = 0;
     pp_count = date_balans = 0;
     line = in->readLine();
     while (!line.isNull())
@@ -167,16 +168,16 @@ bool class_load_pp::verify_pp(QString file)
             while (var != "КонецДокумента" and i < 64)
             {
                 if (var == "Номер") pp->num = value.replace(" ", "");;
-                if (var == "Дата") pp->date = QString::number(QDate::fromString(value, "dd.MM.yyyy").toJulianDay());
+                if (var == "Дата") pp->date = value;
                 if (var == "Сумма") pp->sum = value.replace(" ", "");;
                 if (var == "КвитанцияДата") pp->ticket_date = value;
                 if (var == "КвитанцияВремя") pp->ticket_time = value;
                 if (var == "КвитанцияСодержание") pp->ticket_value = value;
                 if (var == "ПлательщикСчет") pp->payer_count = value.replace(" ", "");;
                 if (var == "ДатаСписано" and (pp->date_oper == "" or pp->date_oper == "0" or pp->date_oper.isNull()) and !value.isNull() and !value.isEmpty())
-                    pp->date_oper = QString::number(QDate::fromString(value, "dd.MM.yyyy").toJulianDay());
+                    pp->date_oper = value;
                 if (var == "ДатаПоступило" and (pp->date_oper == "" or pp->date_oper == "0" or pp->date_oper.isNull()) and !value.isNull() and !value.isEmpty())
-                    pp->date_oper = QString::number(QDate::fromString(value, "dd.MM.yyyy").toJulianDay());
+                    pp->date_oper = value;
                 if (var == "Плательщик") pp->payer = value;
                 if (var == "ПлательщикИНН") pp->payer_inn = value.replace(" ", "");;
                 if (var == "Плательщик1" and value != "") pp->payer1 = value;
@@ -223,7 +224,7 @@ bool class_load_pp::verify_pp(QString file)
                 if (var == "Очередность") pp->ocherednost = value;
                 if (var == "СрокАкцепта") pp->srok_accepta = value;
                 if (var == "ВидАккредитива") pp->type_akkred = value;
-                if (var == "СрокПлатежа") pp->srok_pay = QString::number(QDate::fromString(value, "dd.MM.yyyy").toJulianDay());
+                if (var == "СрокПлатежа") pp->srok_pay = value;
                 if (var == "УсловиеОплаты1") pp->usl_pay1 = value;
                 if (var == "УсловиеОплаты2") pp->usl_pay2 = value;
                 if (var == "УсловиеОплаты3") pp->usl_pay3 = value;
@@ -326,7 +327,7 @@ bool class_load_pp::verify_pp(QString file)
                             ui->tableWidget->setItem(pp_count, 1, new QTableWidgetItem(rs, 0));
                             if (vector_pp->at(pp_count).type == "2") ui->tableWidget->setItem(pp_count, 2, new QTableWidgetItem("Поступление", 0));
                             if (vector_pp->at(pp_count).type == "1") ui->tableWidget->setItem(pp_count, 2, new QTableWidgetItem("Списание", 0));
-                            ui->tableWidget->setItem(pp_count, 3, new QTableWidgetItem(QDate::fromJulianDay(vector_pp->at(pp_count).date_oper.toInt()).toString("dd.MM.yyyy"), 0));
+                            ui->tableWidget->setItem(pp_count, 3, new QTableWidgetItem(vector_pp->at(pp_count).date_oper, 0));
                             ui->tableWidget->setItem(pp_count, 4, new QTableWidgetItem(vector_pp->at(pp_count).dest_pay, 0));
                             ui->tableWidget->setItem(pp_count, 5, new QTableWidgetItem(vector_pp->at(pp_count).sum, 0));
             }
@@ -365,17 +366,17 @@ void class_load_pp::load_pp(QString file)
     summ_in = summ_out = 0;
     QString delta;
 
+    qDebug() << get_firm_id(inn) << inn << endl;
+
     if (get_firm_id(inn) == "")
     {
-        query->exec("BEGIN IMMEDIATE TRANSACTION");
-        query->prepare("INSERT INTO firm (name, inn, stroy) "
-                                "VALUES (?, ?, 'false')");
+        query->prepare("INSERT INTO firms (name, inn, stroy) "
+                                "VALUES (?, ?, 0)");
         query->addBindValue(firm_name);
         query->addBindValue(inn);
         query->exec();
-        query->first();
+        qDebug() << query->lastError().text() << endl;
         query->clear();
-        query->exec("COMMIT");
     }
 
     if (get_id_rs(rs, bik) == "")
@@ -389,48 +390,35 @@ void class_load_pp::load_pp(QString file)
         switch (ret)
         {
            case QMessageBox::Yes:
-                query->exec("BEGIN IMMEDIATE TRANSACTION");
-                query->prepare("INSERT INTO rss (name, bik, number, firm)"
-                           "VALUES (?, ?, ?, ?)");
-                //qDebug() << bik + "/" + rs << endl;
+                query->prepare("INSERT INTO rss (name, bik, number, firm, start_balans)"
+                               "VALUES (?, ?, ?, ?, ?)");
                 query->addBindValue(bik + "/" + rs);
                 query->addBindValue(bik);
                 query->addBindValue(rs);
                 query->addBindValue(firm_id);
-                query->exec();
-                query->first();
-                query->clear();
-                //query->exec("INSERT INTO rss_balans (id, date, balans) VALUES (" + get_id_rs(rs, bik) + ", " + date_start + ", " + start_balans + ")");
-                //query->clear();
-                query->prepare("INSERT INTO pp (rs_id, type, type_doc, date, sum, num, date_oper, payer_count, payer_inn, receiver_count, receiver_inn) "
-                               "VALUES (?, '2', '100', ?, ?, 0, ?, '', '', '', '')");
-                query->addBindValue(get_id_rs(rs, bik));
-                query->addBindValue(date_start);
                 query->addBindValue(start_balans);
-                query->addBindValue(date_start);
                 query->exec();
                 query->first();
                 query->clear();
-                query->exec("COMMIT");
                 break;
            case QMessageBox::Cancel:
                return;
                break;
          }
     }
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
+    /*
     query->exec("SELECT date FROM rss_balans WHERE id = " + get_id_rs(rs, bik));
     query->first();
     date_balans = query->value(0).toInt();
-
-    query->exec("SELECT date, balans FROM rss_balans WHERE id = " + get_id_rs(rs, bik));
+*/
+    query->exec("SELECT date FROM rss_balans WHERE id = " + get_id_rs(rs, bik));
     query->first();
     //double old_balans = query->value(1).toDouble();
     int old_date = query->value(0).toInt();
     //qDebug() << old_balans << endl;
     for(int i = 0; i != vector_pp->size(); i++)
     {
-        query->prepare("INSERT INTO pp (rs_id, client_id, type, type_doc, num, date, date_oper, sum, ticket_date, ticket_time, ticket_value, payer_count,"
+        query->prepare("INSERT INTO pp (rs_id, client_id, type_pp, type_doc, num_pp, date_pp, date_oper, sum_pp, ticket_date, ticket_time, ticket_value, payer_count,"
                                         "payer, payer_inn, payer1, payer2, payer3, payer4, payer_rs, payer_bank1,"
                                         "payer_bank2, payer_bik, payer_ks, receiver_count, receiver, receiver_inn, receiver1, receiver2, receiver3,"
                                         "receiver4, receiver_rs, receiver_bank1, receiver_bank2, receiver_bik, receiver_ks, type_pay,"
@@ -696,7 +684,7 @@ void class_load_pp::slot_load_pp_db()
 //Получаем id фирмы по ИНН
 QString class_load_pp::get_firm_id(QString inn)
 {
-    query->prepare("SELECT id FROM firm WHERE inn = ?");
+    query->prepare("SELECT id FROM firms WHERE inn = ?");
     query->addBindValue(inn);
     query->exec();
     query->first();

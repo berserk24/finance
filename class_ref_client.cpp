@@ -1,11 +1,13 @@
 #include "class_ref_client.h"
 #include "ui_class_ref_client.h"
 
-class_ref_client::class_ref_client(QWidget *parent) :
+class_ref_client::class_ref_client(QWidget *parent, QSqlDatabase *db1) :
     QWidget(parent),
     ui(new Ui::class_ref_client)
 {
     ui->setupUi(this);
+
+    db = db1;
 
     query = new QSqlQuery;
     select_tarif();
@@ -36,7 +38,7 @@ class_ref_client::class_ref_client(QWidget *parent) :
     ui->tableView->setColumnWidth(10, 200);
     ui->tableView->setColumnHidden(11,true);
 
-    QValidator *validator = new QRegExpValidator(QRegExp("[0-9][0-9]|[0-9],[0-9][0-9]|[0-9][0-9],[0-9][0-9]|[0-9][0-9],[0-9]"), this);
+    QValidator *validator = new QRegExpValidator(QRegExp("[0-9][0-9]|[0-9].[0-9][0-9]|[0-9][0-9].[0-9][0-9]|[0-9][0-9].[0-9]"), this);
     ui->lineEdit_perc_dolg->setValidator(validator);
     ui->lineEdit_perc_nal->setValidator(validator);
     ui->lineEdit_perc_obnal->setValidator(validator);
@@ -89,13 +91,13 @@ void class_ref_client::select_tarif()
 {
     ui->comboBox_tarif->clear();
     int index = 0, i = 0;
-    query->exec("SELECT id, name, def FROM tarif ORDER BY id");
+    query->exec("SELECT id, name, def FROM tarifs ORDER BY id");
     query->first();
     ui->comboBox_tarif->addItem(query->value(1).toString(), QVariant(query->value(0).toInt()));
     while (query->next())
     {
         i++;
-        if (query->value(2).toString() == "Да")
+        if (query->value(2).toInt() == 1)
         {
             index = i;
         }
@@ -130,7 +132,7 @@ void class_ref_client::slot_enable_edit_tarif()
         ui->lineEdit_perc_trans_in->setEnabled(false);
         ui->lineEdit_perc_trans_in_s->setEnabled(false);
         ui->lineEdit_perc_trans_out->setEnabled(false);
-        query->prepare("SELECT t_obnal, t_trans_in, t_trans_in_s, t_trans_out, t_kred, t_nalic FROM tarif WHERE id = ?");
+        query->prepare("SELECT t_obnal, t_trans_in, t_trans_in_s, t_trans_out, t_kred, t_nalic FROM tarifs WHERE id = ?");
         query->addBindValue(ui->comboBox_tarif->itemData(ui->comboBox_tarif->currentIndex()));
         query->exec();
         query->first();
@@ -146,11 +148,11 @@ void class_ref_client::slot_enable_edit_tarif()
 //Добавляем/редаклируем клиента
 void class_ref_client::slot_add_edit_client()
 {
-    int id = 0;
+    int id = 0, status = 0;
     if (ui->pushButton_add->text() == "Добавить")
     {
-        query->exec("BEGIN IMMEDIATE TRANSACTION");
-        query->prepare("INSERT INTO client (name, mail, tarif, t_obnal, t_trans_in, t_trans_in_s, t_trans_out, t_kred, t_nalic)"
+        db->transaction();
+        query->prepare("INSERT INTO clients (name, mail, tarif, t_obnal, t_trans_in, t_trans_in_s, t_trans_out, t_kred, t_nalic)"
                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         query->addBindValue(ui->lineEdit_name->text());
         query->addBindValue(ui->lineEdit_mail->text());
@@ -203,11 +205,9 @@ void class_ref_client::slot_add_edit_client()
         {
             query->addBindValue(ui->lineEdit_perc_nal->text());
         }
-        query->exec();
+        if (query->exec()) status++;
         query->clear();
-        query->prepare("SELECT id FROM client WHERE name = ?");
-        query->addBindValue(ui->lineEdit_name->text());
-        query->exec();
+        if (query->exec("SELECT gen_id(gen_clients_id, 0) FROM RDB$DATABASE")) status++;
         query->first();
         id = query->value(0).toInt();
         query->clear();
@@ -216,14 +216,20 @@ void class_ref_client::slot_add_edit_client()
         query->addBindValue(id);
         query->exec();
         query->clear();
-        query->exec("COMMIT");
+        if (status == 2)
+        {
+            db->commit();
+        }
+        else
+        {
+            db->rollback();
+        }
         clear_field();
         select_table();
     }
     else
     {
-        query->exec("BEGIN IMMEDIATE TRANSACTION");
-        query->prepare("UPDATE client SET name = ?, mail = ?, tarif = ?, t_obnal = ?, t_trans_in = ?, t_trans_in_s = ?, t_trans_out = ?, t_kred = ?, t_nalic = ? "
+        query->prepare("UPDATE clients SET name = ?, mail = ?, tarif = ?, t_obnal = ?, t_trans_in = ?, t_trans_in_s = ?, t_trans_out = ?, t_kred = ?, t_nalic = ? "
                        "WHERE id = ?");
         query->addBindValue(ui->lineEdit_name->text());
         query->addBindValue(ui->lineEdit_mail->text());
@@ -279,7 +285,6 @@ void class_ref_client::slot_add_edit_client()
         query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
         query->exec();
         query->clear();
-        query->exec("COMMIT");
         clear_field();
         select_table();
     }
@@ -327,16 +332,19 @@ void class_ref_client::slot_enable_del()
 //Удаляем клиента
 void class_ref_client::slot_del_client()
 {
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
-    query->prepare("DELETE FROM client WHERE id = ?");
-    query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
-    query->exec();
-    query->clear();
-    query->prepare("DELETE FROM client_balans WHERE id = ?");
-    query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
-    query->exec();
-    query->clear();
-    query->exec("COMMIT");
+    int ret = QMessageBox::warning(this, tr("Внимание"),
+                                        tr("Если вы удалите контрагента удалятся все движения по нему.\nВы уверены что хотите удалить контрагента?"),
+                                        QMessageBox::Yes
+                                        | QMessageBox::Cancel,
+                                        QMessageBox::Yes);
+        switch (ret) {
+           case QMessageBox::Yes:
+            query->prepare("DELETE FROM clients WHERE id = ?");
+            query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
+            query->exec();
+            query->clear();
+            return;
+        }
     clear_field();
     select_table();
 }
@@ -352,9 +360,9 @@ void class_ref_client::clear_field()
 //Обновляем таблицу
 void class_ref_client::select_table()
 {
-    model->setQuery("SELECT client.id, client.name, client.mail, tarif.id, tarif.name, client.t_obnal, client.t_trans_in, client.t_trans_in_s, client.t_trans_out, client.t_kred, client.t_nalic FROM client "
-                    "LEFT JOIN tarif ON tarif.id = client.tarif "
-                    "WHERE client.id > 0");
+    model->setQuery("SELECT clients.id, clients.name, clients.mail, tarifs.id, tarifs.name, clients.t_obnal, clients.t_trans_in, clients.t_trans_in_s, clients.t_trans_out, clients.t_kred, clients.t_nalic FROM clients "
+                    "LEFT JOIN tarifs ON tarifs.id = clients.tarif "
+                    "WHERE clients.id > 0");
     ui->tableView->setModel(model);
     ui->tableView->show();
 }

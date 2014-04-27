@@ -30,7 +30,7 @@ class_ref_tarif::class_ref_tarif(QWidget *parent) :
     ui->tableView->setColumnWidth(7, 150);
     ui->tableView->setColumnWidth(8, 200);
 
-    QValidator *validator = new QRegExpValidator(QRegExp("[0-9][0-9]|[0-9],[0-9][0-9]|[0-9][0-9],[0-9][0-9]|[0-9][0-9],[0-9]"), this);
+    QValidator *validator = new QRegExpValidator(QRegExp("[0-9][0-9]|[0-9].[0-9][0-9]|[0-9][0-9].[0-9][0-9]|[0-9][0-9].[0-9]"), this);
     ui->lineEdit_perc_dolg->setValidator(validator);
     ui->lineEdit_perc_nal->setValidator(validator);
     ui->lineEdit_perc_obnal->setValidator(validator);
@@ -76,20 +76,22 @@ void class_ref_tarif::slot_enable_add_edit()
 //Добавляем/изменяем тариф
 void class_ref_tarif::slot_add_edit_tarif()
 {
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
     if (ui->pushButton_add_edit->text() == "Добавить")
     {
-        query->prepare("INSERT INTO tarif (name, def, t_obnal, t_trans_in, t_trans_in_s, t_trans_out, t_kred, t_nalic)"
+        if (ui->checkBox_def->isChecked())
+        {
+            clear_default();
+        }
+        query->prepare("INSERT INTO tarifs (name, def, t_obnal, t_trans_in, t_trans_in_s, t_trans_out, t_kred, t_nalic)"
                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         query->addBindValue(ui->lineEdit_name->text());
         if (ui->checkBox_def->isChecked())
         {
-            query->addBindValue("Да");
-            clear_default();
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("Нет");
+            query->addBindValue(0);
         }
         if (ui->lineEdit_perc_obnal->text() == "")
         {
@@ -142,16 +144,19 @@ void class_ref_tarif::slot_add_edit_tarif()
     }
     else
     {
-        query->prepare("UPDATE tarif SET name = ?, def = ?, t_obnal = ?, t_trans_in = ?, t_trans_in_s = ?, t_trans_out = ?, t_kred = ?, t_nalic = ? WHERE id = ?");
+        if (ui->checkBox_def->isChecked())
+        {
+            clear_default();
+        }
+        query->prepare("UPDATE tarifs SET name = ?, def = ?, t_obnal = ?, t_trans_in = ?, t_trans_in_s = ?, t_trans_out = ?, t_kred = ?, t_nalic = ? WHERE id = ?");
         query->addBindValue(ui->lineEdit_name->text());
         if (ui->checkBox_def->isChecked())
         {
-            query->addBindValue("Да");
-            clear_default();
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("Нет");
+            query->addBindValue(0);
         }
         if (ui->lineEdit_perc_obnal->text() == "")
         {
@@ -205,7 +210,6 @@ void class_ref_tarif::slot_add_edit_tarif()
     }
     query->exec();
     query->clear();
-    query->exec("COMMIT");
     clear_field();
     select_table();
 }
@@ -226,7 +230,12 @@ void class_ref_tarif::clear_field()
 //Обновляем таблицу
 void class_ref_tarif::select_table()
 {
-    model->setQuery("SELECT * FROM tarif WHERE id > 0");
+    model->setQuery("SELECT tarifs.id, tarifs.name, yn.data, tarifs.t_obnal, "
+                            "tarifs.t_trans_in, tarifs.t_trans_in_s, tarifs.t_trans_out, "
+                            "tarifs.t_kred, tarifs.t_nalic "
+                    "FROM tarifs "
+                    "LEFT JOIN yes_no yn ON yn.id = tarifs.def "
+                    "WHERE tarifs.id > 0");
     ui->tableView->setModel(model);
     ui->tableView->show();
 }
@@ -275,7 +284,7 @@ void class_ref_tarif::slot_enable_del()
 //Удаляем тариф
 void class_ref_tarif::slot_del_tarif()
 {
-    query->prepare("SELECT id FROM client WHERE tarif = ?");
+    query->prepare("SELECT id FROM clients WHERE tarif = ?");
     query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
     query->exec();
     if (query->first())
@@ -284,12 +293,10 @@ void class_ref_tarif::slot_del_tarif()
     }
     else
     {
-        query->exec("BEGIN IMMEDIATE TRANSACTION");
-        query->prepare("DELETE FROM tarif WHERE id = ?");
+        query->prepare("DELETE FROM tarifs WHERE id = ?");
         query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
         query->exec();
         query->clear();
-        query->exec("COMMIT");
         clear_field();
         select_table();
     }
@@ -299,18 +306,16 @@ void class_ref_tarif::slot_del_tarif()
 void class_ref_tarif::clear_default()
 {
     query_def = new QSqlQuery;
-    query_def->prepare("SELECT id FROM tarif WHERE def = 'Да'");
+    query_def->prepare("SELECT id FROM tarifs WHERE def = '1'");
     query_def->exec();
     if (query_def->first())
     {
         int id = query_def->value(0).toInt();
         query->clear();
-        query->exec("BEGIN IMMEDIATE TRANSACTION");
-        query_def->prepare("UPDATE tarif SET def = 'Нет' WHERE id = ?");
+        query_def->prepare("UPDATE tarifs SET def = 0 WHERE id = ?");
         query_def->addBindValue(id);
         query_def->exec();
         query_def->clear();
-        query_def->exec("COMMIT");
     }
 }
 

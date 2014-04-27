@@ -8,8 +8,6 @@ class_ref_balans_rs::class_ref_balans_rs(QWidget *parent) :
     ui->setupUi(this);
     model = new QSqlQueryModel;
 
-    ui->dateEdit->setDate(QDate::currentDate());
-
     slot_select_table();
     model->setHeaderData(0,Qt::Horizontal, "Организация");
     model->setHeaderData(1,Qt::Horizontal, "Расчётный счёт");
@@ -26,34 +24,15 @@ class_ref_balans_rs::class_ref_balans_rs(QWidget *parent) :
     //Считаем сумму выделенных строк
     connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(slot_sum_balans_rs()));
 
-    connect(ui->dateEdit, SIGNAL(dateChanged(QDate)), SLOT(slot_select_table()));
-
 }
 
 void class_ref_balans_rs::slot_select_table()
 {
-    /*model->setQuery("   SELECT firm.name, rss.name, strftime('%d.%m.%Y', date(julianday(balans.date))), balans.balans"
-                        " FROM rss_balans balans"
-                        " LEFT JOIN rss ON balans.id = rss.id"
-                        " LEFT JOIN firm ON rss.firm = firm.id");
-    */
-    model->setQuery("SELECT IFNULL(_in.firm, _out.firm) AS rs, IFNULL(_in.rs, _out.rs) AS rs, strftime('%d.%m.%Y', date(julianday(IFNULL(_in.date, _out.date)))) AS date, CAST(ROUND((IFNULL(_in.sum, 0) - IFNULL(_out.sum, 0)), 2) AS TEXT) as sum FROM( "
-                        "SELECT firm.name firm, rss.name rs, MAX(pp.date) date, SUM(pp.sum) sum, pp.type type "
-                        "FROM pp "
-                        "LEFT JOIN rss ON rss.id = pp.rs_id "
-                        "LEFT JOIN firm ON firm.id = rss.firm "
-                        "WHERE pp.type = '2' "
-                        "AND pp.date <= " + QString::number(ui->dateEdit->date().toJulianDay()) +
-                        " GROUP BY pp.rs_id, pp.type) _in "
-                    "LEFT JOIN ( "
-                        "SELECT firm.name firm, rss.name rs, MAX(pp.date) date, SUM(pp.sum) sum, pp.type type "
-                        "FROM pp "
-                        "LEFT JOIN rss ON rss.id = pp.rs_id "
-                        "LEFT JOIN firm ON firm.id = rss.firm "
-                        "WHERE pp.type = '1' "
-                        "AND pp.date <= " + QString::number(ui->dateEdit->date().toJulianDay()) +
-                        " GROUP BY pp.rs_id, pp.type) _out "
-                        "ON _in.rs = _out.rs");
+    model->setQuery("SELECT firms.name, rss.name, balans.last_date, CAST(balans.balans + rss.start_balans AS VARCHAR(20)) "
+                    "FROM rss_balans balans "
+                    "LEFT JOIN rss ON balans.id = rss.id "
+                    "LEFT JOIN firms ON rss.firm = firms.id");
+
 
     ui->tableView->setModel(model);
 }

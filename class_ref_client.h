@@ -5,6 +5,8 @@
 #include <QSqlDatabase>
 #include <QSqlQueryModel>
 #include <QSqlQuery>
+#include <QSqlError>
+#include <QMessageBox>
 #include <QDebug>
 
 namespace Ui {
@@ -16,7 +18,7 @@ class class_ref_client : public QWidget
     Q_OBJECT
 
 public:
-    explicit class_ref_client(QWidget *parent = 0);
+    explicit class_ref_client(QWidget *parent, QSqlDatabase *db1);
     ~class_ref_client();
 
 public slots:
@@ -32,6 +34,7 @@ private:
     Ui::class_ref_client *ui;
     QSqlQueryModel *model;
     QSqlQuery *query;
+    QSqlDatabase *db;
 
     void clear_field();
 

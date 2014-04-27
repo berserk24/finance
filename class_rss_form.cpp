@@ -1,11 +1,13 @@
 #include "class_rss_form.h"
 #include "ui_class_rss_form.h"
 
-class_rss_form::class_rss_form(QWidget *parent) :
+class_rss_form::class_rss_form(QWidget *parent, QSqlDatabase *db1) :
     QWidget(parent),
     ui(new Ui::class_rss_form)
 {
     ui->setupUi(this);
+
+    db = db1;
 
     query = new QSqlQuery;
 
@@ -16,7 +18,7 @@ class_rss_form::class_rss_form(QWidget *parent) :
     validator = new QRegExpValidator(QRegExp("[0-9]\\d{8}"), this);
     ui->lineEdit_bik->setValidator(validator);
 
-    validator = new QRegExpValidator(QRegExp("[1-9]\\d+,[0-9][0-9]"), this);
+    validator = new QRegExpValidator(QRegExp("[1-9]\\d+.[0-9][0-9]"), this);
     ui->lineEdit_start_balans->setValidator(validator);
 
 
@@ -59,11 +61,14 @@ class_rss_form::class_rss_form(QWidget *parent) :
 void class_rss_form::slot_add_rs()
 {
     QString id;
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
+    int status = 0;
     if (ui->pushButton_add_edit->text() == "Добавить")
     {
-        query->prepare("INSERT INTO rss (name, bik, number, firm)"
-                            "VALUES (?, ?, ?, ?)");
+        status = 0;
+
+        db->transaction();
+        query->prepare("INSERT INTO rss (name, bik, number, firm, start_balans)"
+                            "VALUES (?, ?, ?, ?, ?)");
         query->addBindValue(ui->lineEdit_name->text());
         query->addBindValue(ui->lineEdit_bik->text());
         query->addBindValue(ui->lineEdit_number->text());
@@ -75,40 +80,41 @@ void class_rss_form::slot_add_rs()
         {
             query->addBindValue(ui->comboBox->itemData(ui->comboBox->currentIndex()).toString());
         }
-        query->exec();
+        query->addBindValue(ui->lineEdit_start_balans->text());
+        if (query->exec()) status++;
         query->clear();
-        query->exec("SELECT seq FROM sqlite_sequence WHERE name = 'rss'");
+        if (query->exec("SELECT gen_id(gen_rss_id, 0) FROM RDB$DATABASE")) status++;
         query->first();
         id = query->value(0).toString();
         query->clear();
-        query->prepare("INSERT INTO pp (rs_id, type, type_doc, date, sum, num, date_oper, payer_count, payer_inn, receiver_count, receiver_inn) "
-                       "VALUES (?, '2', '100', ?, ?, 0, ?, '', '', '', '')");
+        query->prepare("INSERT INTO rss_balans (id, last_date, balans) "
+                       "VALUES (?, ?, 0)");
         query->addBindValue(id);
-        query->addBindValue(QString::number(QDate::currentDate().toJulianDay()));
-        query->addBindValue(ui->lineEdit_start_balans->text());
-        query->addBindValue(QString::number(QDate::currentDate().toJulianDay()));
-        query->exec();
+        query->addBindValue(QDate::currentDate());
+        if (query->exec()) status++;
         query->clear();
+        if (status == 3)
+        {
+            db->commit();
+        }
+        else
+        {
+            db->rollback();
+        }
     }
     if (ui->pushButton_add_edit->text() == "Изменить")
     {
-        query->prepare("UPDATE rss SET name=?, bik=?, number=?, firm=?"
+        query->prepare("UPDATE rss SET name=?, bik=?, number=?, firm=?, start_balans=?"
                             "WHERE id=?");
         query->addBindValue(ui->lineEdit_name->text());
         query->addBindValue(ui->lineEdit_bik->text());
         query->addBindValue(ui->lineEdit_number->text());
         query->addBindValue(ui->comboBox->itemData(ui->comboBox->currentIndex()).toString());
-        query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toInt());
-        query->exec();
-        query->clear();
-        query->prepare("UPDATE pp SET sum = ? "
-                       "WHERE pp.rs_id = ? AND pp.type_doc = '100'");
         query->addBindValue(ui->lineEdit_start_balans->text());
         query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toInt());
         query->exec();
         query->clear();
     }
-    query->exec("COMMIT");
     clear_field();
     select_table();
 }
@@ -194,26 +200,22 @@ void class_rss_form::slot_enable_del()
 void class_rss_form::select_firm()
 {
     ui->comboBox->clear();
-    firm_query->exec("BEGIN IMMEDIATE TRANSACTION");
-    firm_query->exec("SELECT id, name FROM firm ORDER BY id");
+    firm_query->exec("SELECT id, name FROM firms ORDER BY id");
     firm_query->first();
     ui->comboBox->addItem(firm_query->value(1).toString(), QVariant(firm_query->value(0).toInt()));
     while (firm_query->next())
     {
         ui->comboBox->addItem(firm_query->value(1).toString(), QVariant(firm_query->value(0).toInt()));
     }
-    firm_query->exec("COMMIT");
 }
 
 //Заполняем таблицу
 void class_rss_form::select_table()
 {
-    model->setQuery("SELECT rss.id, rss.name, rss.bik, rss.number, firm.name, firm.id, CAST(pp.sum AS TEXT) "
+    model->setQuery("SELECT rss.id, rss.name, rss.bik, rss.number, firms.name, firms.id, CAST(rss.start_balans AS VARCHAR(18)) "
                     "FROM rss "
-                    "LEFT JOIN firm "
-                    "LEFT JOIN pp ON rss.id = pp.rs_id "
-                                 "AND pp.type_doc = '100'"
-                    "WHERE rss.firm = firm.id");
+                    "LEFT JOIN firms ON rss.firm = firms.id "
+                    "ORDER BY rss.id");
     ui->tableView->setModel(model);
     ui->tableView->show();
 }
@@ -231,6 +233,7 @@ void class_rss_form::clear_field()
 //Удаляем РС
 void class_rss_form::slot_del_rs()
 {
+    int status = 0;
     int ret = QMessageBox::warning(this, tr("Внимание"),
                                         tr("Удаление платежей необходимо только при отзыве платежа.\nВы уверены что хотите удалить платёжное поручение?"),
                                         QMessageBox::Yes
@@ -238,16 +241,23 @@ void class_rss_form::slot_del_rs()
                                         QMessageBox::Yes);
         switch (ret) {
            case QMessageBox::Yes:
-                query->exec("BEGIN IMMEDIATE TRANSACTION");
-                query->prepare("DELETE FROM rss WHERE id=?");
-                query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toInt());
-                query->exec();
-                query->clear();
+                db->transaction();
                 query->prepare("DELETE FROM rss_balans WHERE id=?");
                 query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toInt());
-                query->exec();
+                if (query->exec()) status++;
                 query->clear();
-                query->exec("COMMIT");
+                query->prepare("DELETE FROM rss WHERE id=?");
+                query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toInt());
+                if (query->exec()) status++;
+                query->clear();
+                if (status == 2)
+                {
+                    db->commit();
+                }
+                else
+                {
+                    db->rollback();
+                }
                 clear_field();
                 select_table();
                 break;

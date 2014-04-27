@@ -27,7 +27,7 @@ class class_load_pp : public QWidget
     Q_OBJECT
 
 public:
-    explicit class_load_pp(QWidget *parent = 0);
+    explicit class_load_pp(QWidget *parent, QSqlDatabase *db1);
     ~class_load_pp();
 
 public slots:
@@ -54,6 +54,7 @@ private:
     QString report;
     int pp_in_count, pp_out_count;
     class_report_load_pp *report_pp;
+    QSqlDatabase *db;
 
     QString set_codec(QTextStream *);
     QString get_bik(QTextStream *);

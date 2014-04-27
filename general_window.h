@@ -29,7 +29,7 @@ class general_window : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit general_window(QWidget *parent, int *);
+    explicit general_window(QWidget *parent, QSqlDatabase *db1);
     ~general_window();
 
 private:
@@ -48,6 +48,7 @@ private:
     QWidget *tab;
     QSqlQuery *query;
     QLabel lb;
+    QSqlDatabase *db;
     int i_rs, i_firm, i_client, i_tarif, i_load_pp, i_pp, user_id,
     i_balans_client, i_balans_rs, i_client_pay, i_client_group, i_manage_users,
     i_balans_group, i_report_client;
