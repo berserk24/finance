@@ -376,6 +376,7 @@ void class_load_pp::load_pp(QString file)
 {
     summ_in = summ_out = 0;
     QString delta;
+    int status = 0,id = 0;
 
     if (get_firm_id(inn) == "")
     {
@@ -398,6 +399,8 @@ void class_load_pp::load_pp(QString file)
         switch (ret)
         {
            case QMessageBox::Yes:
+                db->transaction();
+                status = 0;
                 query->prepare("INSERT INTO rss (name, bik, number, firm, start_balans)"
                                "VALUES (?, ?, ?, ?, ?)");
                 query->addBindValue(bik + "/" + rs);
@@ -405,9 +408,26 @@ void class_load_pp::load_pp(QString file)
                 query->addBindValue(rs);
                 query->addBindValue(firm_id);
                 query->addBindValue(start_balans);
-                query->exec();
-                query->first();
+                if (query->exec()) status++;
                 query->clear();
+                if (query->exec("SELECT gen_id(gen_rss_id, 0) FROM RDB$DATABASE")) status++;
+                query->first();
+                id = query->value(0).toInt();
+                query->clear();
+                query->prepare("INSERT INTO rss_balans (id, last_date, balans) "
+                               "VALUES (?, ?, 0)");
+                query->addBindValue(id);
+                query->addBindValue(QDate::currentDate());
+                if (query->exec()) status++;
+                query->clear();
+                if (status == 3)
+                {
+                    db->commit();
+                }
+                else
+                {
+                    db->rollback();
+                }
                 break;
            case QMessageBox::Cancel:
                return;
@@ -426,6 +446,8 @@ void class_load_pp::load_pp(QString file)
     //qDebug() << old_balans << endl;
     for(int i = 0; i != vector_pp->size(); i++)
     {
+        db->transaction();
+        status = 0;
         query->prepare("INSERT INTO pp (rs_id, client_id, type_pp, type_doc, num, date_pp, date_oper, sum_pp, ticket_date, ticket_time, ticket_value, payer_count,"
                                         "date_out, payer, payer_inn, payer1, payer2, payer3, payer4, payer_rs, payer_bank1,"
                                         "payer_bank2, payer_bik, payer_ks, receiver_count, date_in, receiver, receiver_inn, receiver1, receiver2, receiver3,"
@@ -503,11 +525,28 @@ void class_load_pp::load_pp(QString file)
         query->addBindValue(vector_pp->at(i).dop_usl);
         query->addBindValue(vector_pp->at(i).num_scheta_postav);
         query->addBindValue(vector_pp->at(i).date_send_doc);
-        query->exec();
-        qDebug() << query->lastError().text() << query->lastQuery() << endl;
-        qDebug() << vector_pp->at(i).date_in << vector_pp->at(i).date_out << vector_pp->at(i).date << vector_pp->at(i).date_oper << vector_pp->at(i).ticket_date << vector_pp->at(i).pokazatel_date << vector_pp->at(i).date_send_doc << endl;
-        if (!query->lastError().isValid())
+        if (query->exec())
         {
+
+            //Обновляем баланс расчётного счёта
+            {
+                status++;
+                query->prepare("UPDATE rss_balans SET last_date=?, balans=balans + ? "
+                               "WHERE id=?");
+                query->addBindValue(vector_pp->at(i).date_oper);
+                if (vector_pp->at(i).type.toInt() == 1)
+                {
+                    query->addBindValue("-" + vector_pp->at(i).sum);
+                }
+                else
+                {
+                    query->addBindValue(vector_pp->at(i).sum);
+                }
+                query->addBindValue(get_id_rs(rs, bik));
+                if (query->exec()) status++;
+                query->clear();
+            }
+
             if (vector_pp->at(i).type.toInt() == 1)
             {
                 pp_out_count++;
@@ -530,7 +569,8 @@ void class_load_pp::load_pp(QString file)
                 //qDebug() << summ_out << summ_in << delta.replace(",", ".").toDouble() << i << endl;
             }
 
-            if (vector_pp->at(i).type_doc.toInt() > 0)
+
+            /*if (vector_pp->at(i).type_doc.toInt() > 0)
             {
                 if (vector_pp->at(i).type.toInt() == 1)
                 query->prepare("SELECT seq FROM sqlite_sequence WHERE name = 'pp'");
@@ -547,17 +587,14 @@ void class_load_pp::load_pp(QString file)
                                         "",
                                         ""
                             );
-                /*if (vector_pp->at(i).type.toInt() == 2)
-                    ucb->slot_update_balans("0",
-                                        "Приход",
-                                        vector_pp->at(i).sum,
-                                        query->value(0).toString(),
-                                        false,
-                                        vector_pp->at(i).dest_pay,
-                                        true,
-                                        "",
-                                        ""
-                            );*/
+            }*/
+            if (status == 2)
+            {
+                db->commit();
+            }
+            else
+            {
+                db->rollback();
             }
         }
         else
@@ -568,15 +605,13 @@ void class_load_pp::load_pp(QString file)
         ui->tableWidget->removeRow(0);
     }
     //qDebug() << old_balans << QString::number(old_balans - summ_out + summ_in, 'f', 2) << summ_out << summ_in << endl;
-    if (date_balans <= date_end.toInt())
+    /*if (date_balans <= date_end.toInt())
     {
-        query->exec("BEGIN IMMEDIATE TRANSACTION");
-        //query->exec("UPDATE rss_balans SET id = " + get_id_rs(rs, bik) + ", date = " + date_end + ", balans = '" + QString::number(old_balans - summ_out + summ_in, 'f', 2) + "' WHERE id = " + get_id_rs(rs, bik));
         query->exec("UPDATE rss_balans SET id = " + get_id_rs(rs, bik) + ", date = " + date_end + ", balans = '" + end_balans + "' WHERE id = " + get_id_rs(rs, bik));
         query->first();
         query->clear();
         query->exec("COMMIT");
-    }
+    }*/
     delete vector_pp;
     report += "<tr><td>" + file.right(file.length() - file.lastIndexOf('/') - 1) + "</td><td>" + QString::number(pp_in_count, 'f', 0) + "</td><td>" + QString::number(pp_in_count, 'f', 0) + "</td><td>" + QString::number(pp_in_count + pp_out_count, 'f', 0) + "</td></tr>";
 }

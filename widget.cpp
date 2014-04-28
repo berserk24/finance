@@ -13,6 +13,10 @@ Widget::Widget(QWidget *parent) :
 
     show();
 
+    ui->pushButton_enter->setFocus();
+    if (ui->lineEdit_passwd->text() == "") ui->lineEdit_passwd->setFocus();
+    if (ui->lineEdit_login->text() == "") ui->lineEdit_login->setFocus();
+
     db = new QSqlDatabase;
 
     connect(ui->pushButton_enter, SIGNAL(clicked()), this, SLOT(slot_login()));
@@ -399,7 +403,9 @@ void Widget::create_database()
                                     "num_scheta_postav VARCHAR(100), "
                                     "date_send_doc DATE, "
                                     "UNIQUE (num, rs_id, type_pp, date_pp), "
-                                    "FOREIGN KEY (rs_id) REFERENCES rss(id))"
+                                    "FOREIGN KEY (rs_id) REFERENCES rss(id) "
+                                    "ON DELETE CASCADE "
+                                    "ON UPDATE CASCADE)"
                         );
             query->exec("CREATE INDEX i_type_doc ON pp(type_doc)");
             query->exec("CREATE INDEX i_date_oper ON pp(date_oper)");
