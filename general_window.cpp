@@ -180,12 +180,13 @@ void general_window::slot_show_ref_pp()
 {
     if (i_pp == -1)
     {
-        pps = new class_ref_pp(0, user_id);
+        pps = new class_ref_pp(0, db);
         i_pp = ui->tabWidget->addTab(pps, QString("Платёжные поручения"));
         ui->tabWidget->setCurrentIndex(i_pp);
         connect(pps, SIGNAL(show_ref_client()), SLOT(show_ref_client()));
         ui->menu_view->setEnabled(true);
         connect(ui->action_column, SIGNAL(triggered()), pps, SLOT(slot_show_settings_table()));
+        connect(pps, SIGNAL(signal_send_sum_pp(QString)), SLOT(slot_set_status_bar_data(QString)));
     }
     else
     {
@@ -197,7 +198,7 @@ void general_window::slot_show_ref_balans_client()
 {
     if (i_balans_client == -1)
     {
-        balans_client = new class_ref_balans_client;
+        balans_client = new class_ref_balans_client(0, db);
         i_balans_client = ui->tabWidget->addTab(balans_client, QString("Баланс счетов контрагентов"));
         ui->tabWidget->setCurrentIndex(i_balans_client);
         connect(balans_client, SIGNAL(signal_send_sum_client(QString)), SLOT(slot_set_status_bar_data(QString)));
@@ -227,7 +228,7 @@ void general_window::slot_show_ref_client_pay()
 {
     if (i_client_pay == -1)
     {
-        client_pay = new class_ref_client_pay;
+        client_pay = new class_ref_client_pay(0, db);
         i_client_pay = ui->tabWidget->addTab(client_pay, QString("Движения по счетам контрагентов"));
         ui->tabWidget->setCurrentIndex(i_client_pay);
     }
@@ -251,12 +252,11 @@ void general_window::slot_show_report_client()
     }
 }
 
-
 void general_window::slot_show_manage_users()
 {
     if (i_manage_users == -1)
     {
-        manage_users = new class_manage_users(0);
+        manage_users = new class_manage_users(0, db);
         i_manage_users = ui->tabWidget->addTab(manage_users, QString("Управление пользователями"));
         ui->tabWidget->setCurrentIndex(i_manage_users);
     }

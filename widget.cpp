@@ -55,7 +55,7 @@ void Widget::set_settings()
 void Widget::create_database()
 {
     qDebug() << db->tables().size() << endl;
-    if (db->tables().size() < 13)
+    if (db->tables().size() < 14)
     {
         /*
         //Создаём таблицу пользоваталей
@@ -102,6 +102,12 @@ void Widget::create_database()
                     ");
         }
 */
+
+        //Создаём роль
+        {
+            query->exec("CREATE ROLE full_access");
+        }
+
         //Создаём таблицу да/нет
         {
             query->exec("   CREATE TABLE yes_no ("
@@ -111,6 +117,7 @@ void Widget::create_database()
                                         "PRIMARY KEY (id), "
                                         "UNIQUE      (data));"
                         );
+            query->exec("GRANT ALL ON yes_no TO full_access");
         }
         {
             query->exec("   INSERT INTO    yes_no   (id, data) "
@@ -127,6 +134,7 @@ void Widget::create_database()
                                     "PRIMARY KEY (id), "
                                     "UNIQUE (data));"
                         );
+            query->exec("GRANT ALL ON pp_in_out TO full_access");
         }
 
         //Создаём типы платёжек
@@ -147,6 +155,7 @@ void Widget::create_database()
                                     "PRIMARY KEY (id), "
                                     "UNIQUE (data));"
                         );
+            query->exec("GRANT ALL ON pp_type TO full_access");
         }
 
         //Создаём типы платёжек
@@ -173,6 +182,7 @@ void Widget::create_database()
             query->exec("CREATE GENERATOR gen_firms_id");
             query->exec("SET GENERATOR gen_firms_id TO 0");
             query->exec("CREATE TRIGGER tr_firms FOR firms ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(GEN_FIRMS_ID, 1);END");
+            query->exec("GRANT ALL ON firms TO full_access");
         }
 
         //Создаём фирму 0
@@ -202,6 +212,7 @@ void Widget::create_database()
             query->exec("CREATE GENERATOR gen_rss_id");
             query->exec("SET GENERATOR gen_rss_id TO 0");
             query->exec("CREATE TRIGGER tr_rss FOR rss ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(GEN_RSS_ID, 1);END");
+            query->exec("GRANT ALL ON rss TO full_access");
         }
 
         //Создаём таблицу баланса РС
@@ -215,6 +226,7 @@ void Widget::create_database()
                                     "ON UPDATE CASCADE, "
                                     "UNIQUE (id))"
                         );
+            query->exec("GRANT ALL ON rss_balans TO full_access");
         }
 
         //Создаём таблицу настроек
@@ -227,14 +239,8 @@ void Widget::create_database()
                                     "PRIMARY KEY (id), "
                                     "UNIQUE (id_user, name))"
                         );
+            query->exec("GRANT ALL ON settings TO full_access");
         }
-
-        //Колонки окна ПП
-        {
-            //query->exec("INSERT INTO settings (value, name) VALUES ('1111111111', 'pp_collumn')");
-        }
-
-
 
         //Создаём таблицу контрагентов
         {
@@ -254,6 +260,7 @@ void Widget::create_database()
             query->exec("CREATE GENERATOR gen_clients_id");
             query->exec("SET GENERATOR gen_clients_id TO 0");
             query->exec("CREATE TRIGGER tr_clients FOR clients ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(GEN_CLIENTS_ID, 1);END");
+            query->exec("GRANT ALL ON clients TO full_access");
         }
 
         //Создаём клиента для %ов
@@ -273,6 +280,7 @@ void Widget::create_database()
                                     "ON UPDATE CASCADE, "
                                     "PRIMARY KEY (id))"
                         );
+            query->exec("GRANT ALL ON client_balans TO full_access");
         }
 
         //Создаём баланс 0ого клиента
@@ -298,7 +306,7 @@ void Widget::create_database()
             query->exec("CREATE GENERATOR gen_clients_operations_id");
             query->exec("SET GENERATOR gen_clients_operations_id TO 0");
             query->exec("CREATE TRIGGER tr_clients_operations FOR clients_operations ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(gen_clients_operations_id, 1);END");
-
+            query->exec("GRANT ALL ON clients_operations TO full_access");
         }
 
         //Создаём таблицу тарифов
@@ -315,10 +323,10 @@ void Widget::create_database()
                                     "t_nalic NUMERIC(3,2) NOT NULL, "
                                     "UNIQUE (name)) "
                     );
-                    query->exec("CREATE GENERATOR gen_tarifs_id");
-                    query->exec("SET GENERATOR gen_tarifs_id TO 0");
-                    query->exec("CREATE TRIGGER tr_tarifs FOR tarifs ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(gen_tarifs_id, 1);END");
-
+            query->exec("CREATE GENERATOR gen_tarifs_id");
+            query->exec("SET GENERATOR gen_tarifs_id TO 0");
+            query->exec("CREATE TRIGGER tr_tarifs FOR tarifs ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(gen_tarifs_id, 1);END");
+            query->exec("GRANT ALL ON tarifs TO full_access");
         }
 
         //Создаём 0ой тариф
@@ -419,6 +427,7 @@ void Widget::create_database()
             query->exec("CREATE GENERATOR gen_pp_id");
             query->exec("SET GENERATOR gen_pp_id TO 0");
             query->exec("CREATE TRIGGER tr_pp FOR pp ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(gen_pp_id, 1);END");
+            query->exec("GRANT ALL ON pp TO full_access");
 
         }
 
@@ -429,7 +438,28 @@ void Widget::create_database()
                                     "client_id INTEGER NOT NULL, "
                                     "UNIQUE (pp_id, client_id))"
                         );
+            query->exec("GRANT ALL ON pp_to_client TO full_access");
         }
+
+        //Создаём таблицу прав пользоваталей
+        {
+            query->exec("CREATE TABLE users_access ("
+                                    "id VARCHAR(18) PRIMARY KEY NOT NULL, "
+                                    "ref SMALLINT NOT NULL, "
+                                    "load_pp SMALLINT NOT NULL, "
+                                    "work_pp SMALLINT NOT NULL, "
+                                    "report SMALLINT NOT NULL, "
+                                    "client SMALLINT NOT NULL) "
+                        );
+            query->exec("GRANT ALL ON users_access TO full_access");
+        }
+
+        //Права пользователя admin
+        {
+            query->exec("INSERT INTO users_access (id, ref, load_pp, work_pp, report, client) "
+                        "VALUES ('SYSDBA', 1, 1, 1, 1, 1)");
+        }
+
     }
     this->hide();
     gen_window = new general_window(0, db);
@@ -443,6 +473,8 @@ void Widget::slot_login()
     db->setHostName("localhost");
     db->setUserName(ui->lineEdit_login->text());
     db->setPassword(ui->lineEdit_passwd->text());
+    if (ui->lineEdit_login->text() != "SYSDBA")
+        db->setConnectOptions("ISC_DPB_SQL_ROLE_NAME=full_access");
     if (!db->open())
     {
         QString error_db = db->lastError().text();

@@ -19,7 +19,7 @@ class class_ref_client_pay : public QWidget
     Q_OBJECT
 
 public:
-    explicit class_ref_client_pay(QWidget *parent = 0);
+    explicit class_ref_client_pay(QWidget *parent, QSqlDatabase *db1);
     ~class_ref_client_pay();
 
 public slots:
@@ -33,6 +33,7 @@ private:
     QSqlQuery *query;
     QSqlQueryModel *model;
     update_client_balans *ucb;
+    QSqlDatabase *db;
 };
 
 #endif // CLASS_REF_CLIENT_PAY_H

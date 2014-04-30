@@ -11,7 +11,7 @@ class_load_pp::class_load_pp(QWidget *parent, QSqlDatabase *db1) :
 
     query = new QSqlQuery;
 
-    ucb = new update_client_balans;
+    ucb = new update_client_balans(0, db);
 
     set_path_to_pp();
     if (ui->lineEdit_path->text() != "")

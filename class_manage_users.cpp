@@ -1,7 +1,7 @@
 #include "class_manage_users.h"
 #include "ui_class_manage_users.h"
 
-class_manage_users::class_manage_users(QWidget *parent) :
+class_manage_users::class_manage_users(QWidget *parent, QSqlDatabase *db1) :
     QWidget(parent),
     ui(new Ui::class_manage_users)
 {
@@ -9,24 +9,24 @@ class_manage_users::class_manage_users(QWidget *parent) :
 
     model = new QSqlQueryModel;
     query = new QSqlQuery;
-    hash = new QCryptographicHash(QCryptographicHash::Md5);
+
+    db = db1;
 
     slot_select_table();
 
-    model->setHeaderData(1,Qt::Horizontal, "Имя пользователя");
-    model->setHeaderData(2,Qt::Horizontal, "Справочники");
-    model->setHeaderData(3,Qt::Horizontal, "Загрузка\nплатёжек");
-    model->setHeaderData(4,Qt::Horizontal, "Обработка\nплатёжек");
-    model->setHeaderData(5,Qt::Horizontal, "Баланс\nконтрагентов");
-    model->setHeaderData(6,Qt::Horizontal, "Отчёты");
+    model->setHeaderData(0,Qt::Horizontal, "Имя пользователя");
+    model->setHeaderData(1,Qt::Horizontal, "Справочники");
+    model->setHeaderData(2,Qt::Horizontal, "Загрузка\nплатёжек");
+    model->setHeaderData(3,Qt::Horizontal, "Обработка\nплатёжек");
+    model->setHeaderData(4,Qt::Horizontal, "Баланс\nконтрагентов");
+    model->setHeaderData(5,Qt::Horizontal, "Отчёты");
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->tableView->setColumnHidden(0,true);
-    ui->tableView->setColumnWidth(1, 150);
+    ui->tableView->setColumnWidth(0, 150);
+    ui->tableView->setColumnWidth(1, 130);
     ui->tableView->setColumnWidth(2, 130);
     ui->tableView->setColumnWidth(3, 130);
     ui->tableView->setColumnWidth(4, 130);
     ui->tableView->setColumnWidth(5, 130);
-    ui->tableView->setColumnWidth(6, 130);
 
     //Включаем/выключаем кнопку добавить, удалить
     connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(slot_set_field()));
@@ -42,13 +42,12 @@ class_manage_users::class_manage_users(QWidget *parent) :
 //Заполняем таблицу
 void class_manage_users::slot_select_table()
 {
-    model->setQuery("SELECT users.id, users.name, yn1.name, yn2.name, yn3.name, yn4.name, yn5.name FROM users "
-                    "LEFT JOIN users_access uac ON uac.id = users.id "
-                    "LEFT JOIN yes_no yn1 ON yn1.id = uac.ref "
-                    "LEFT JOIN yes_no yn2 ON yn2.id = uac.load_pp "
-                    "LEFT JOIN yes_no yn3 ON yn3.id = uac.work_pp "
-                    "LEFT JOIN yes_no yn4 ON yn4.id = uac.client "
-                    "LEFT JOIN yes_no yn5 ON yn5.id = uac.report");
+    model->setQuery("SELECT users_access.id, yn1.data, yn2.data, yn3.data, yn4.data, yn5.data FROM users_access "
+                    "LEFT JOIN yes_no yn1 ON yn1.id = users_access.ref "
+                    "LEFT JOIN yes_no yn2 ON yn2.id = users_access.load_pp "
+                    "LEFT JOIN yes_no yn3 ON yn3.id = users_access.work_pp "
+                    "LEFT JOIN yes_no yn4 ON yn4.id = users_access.client "
+                    "LEFT JOIN yes_no yn5 ON yn5.id = users_access.report");
     ui->tableView->setModel(model);
     ui->tableView->show();
 }
@@ -71,17 +70,36 @@ void class_manage_users::slot_set_field()
 {
     if (ui->tableView->selectionModel()->hasSelection() and ui->tableView->selectionModel()->selectedRows().size() == 1)
     {
-        ui->pushButton_del->setEnabled(true);
+        if (ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString() != "SYSDBA")
+        {
+            ui->pushButton_del->setEnabled(true);
+            ui->checkBox_ref->setEnabled(true);
+            ui->checkBox_load_pp->setEnabled(true);
+            ui->checkBox_work_pp->setEnabled(true);
+            ui->checkBox_report->setEnabled(true);
+            ui->checkBox_client->setEnabled(true);
+        }
+        else
+        {
+            ui->pushButton_del->setEnabled(false);
+            ui->checkBox_ref->setEnabled(false);
+            ui->checkBox_load_pp->setEnabled(false);
+            ui->checkBox_work_pp->setEnabled(false);
+            ui->checkBox_report->setEnabled(false);
+            ui->checkBox_client->setEnabled(false);
+        }
         ui->pushButton_add->setText("Изменить");
-        ui->lineEdit_name->setText(ui->tableView->selectionModel()->selectedIndexes().at(1).data().toString());
-        ui->checkBox_ref->setChecked(func_str_to_bool(ui->tableView->selectionModel()->selectedIndexes().at(2).data().toString()));
-        ui->checkBox_load_pp->setChecked(func_str_to_bool(ui->tableView->selectionModel()->selectedIndexes().at(3).data().toString()));
-        ui->checkBox_work_pp->setChecked(func_str_to_bool(ui->tableView->selectionModel()->selectedIndexes().at(4).data().toString()));
-        ui->checkBox_client->setChecked(func_str_to_bool(ui->tableView->selectionModel()->selectedIndexes().at(5).data().toString()));
-        ui->checkBox_report->setChecked(func_str_to_bool(ui->tableView->selectionModel()->selectedIndexes().at(6).data().toString()));
+        ui->lineEdit_name->setText(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
+        ui->lineEdit_name->setEnabled(false);
+        ui->checkBox_ref->setChecked(func_str_to_bool(ui->tableView->selectionModel()->selectedIndexes().at(1).data().toString()));
+        ui->checkBox_load_pp->setChecked(func_str_to_bool(ui->tableView->selectionModel()->selectedIndexes().at(2).data().toString()));
+        ui->checkBox_work_pp->setChecked(func_str_to_bool(ui->tableView->selectionModel()->selectedIndexes().at(3).data().toString()));
+        ui->checkBox_client->setChecked(func_str_to_bool(ui->tableView->selectionModel()->selectedIndexes().at(4).data().toString()));
+        ui->checkBox_report->setChecked(func_str_to_bool(ui->tableView->selectionModel()->selectedIndexes().at(5).data().toString()));
     }
     else
     {
+        ui->lineEdit_name->setEnabled(true);
         ui->pushButton_del->setEnabled(false);
         ui->pushButton_add->setText("Добавить");
         slot_clear_field();
@@ -91,136 +109,137 @@ void class_manage_users::slot_set_field()
 //Добавляем/изменяем пользователя
 void class_manage_users::slot_add_user()
 {
-    int user_id;
+    int status = 0, st = 0;
     if (ui->pushButton_add->text() == "Добавить")
     {
-        query->exec("BEGIN IMMEDIATE TRANSACTION");
-        query->prepare("INSERT INTO users (name, passwd) VALUES (?, ?)");
+        db->transaction();
+        if (query->exec("CREATE USER " + ui->lineEdit_name->text() + " PASSWORD '" + ui->lineEdit_passwd->text() + "'")) status++;
+        qDebug() << status << endl;
+        if (query->exec("GRANT full_access TO " + ui->lineEdit_name->text())) status++;
+        query->prepare("INSERT INTO users_access (id, ref, load_pp, work_pp, report, client) VALUES(?,?,?,?,?,?)");
         query->addBindValue(ui->lineEdit_name->text());
-        query->addBindValue(func_gen_hash(ui->lineEdit_passwd->text()));
-        query->exec();
-        query->clear();
-
-        query->exec("SELECT seq FROM sqlite_sequence WHERE name = 'users'");
-        query->first();
-        user_id = query->value(0).toInt();
-
-        query->prepare("INSERT INTO users_access (id, ref, load_pp, work_pp, client, report) "
-                       "VALUES (?, ?, ?, ?, ?, ?)");
-        query->addBindValue(user_id);
         if (ui->checkBox_ref->isChecked())
         {
-            query->addBindValue("true");
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("false");
+            query->addBindValue(0);
         }
         if (ui->checkBox_load_pp->isChecked())
         {
-            query->addBindValue("true");
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("false");
+            query->addBindValue(0);
         }
         if (ui->checkBox_work_pp->isChecked())
         {
-            query->addBindValue("true");
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("false");
-        }
-        if (ui->checkBox_client->isChecked())
-        {
-            query->addBindValue("true");
-        }
-        else
-        {
-            query->addBindValue("false");
+            query->addBindValue(0);
         }
         if (ui->checkBox_report->isChecked())
         {
-            query->addBindValue("true");
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("false");
+            query->addBindValue(0);
         }
-        query->exec();
-        query->clear();
-        query->exec("COMMIT");
+        if (ui->checkBox_client->isChecked())
+        {
+            query->addBindValue(1);
+        }
+        else
+        {
+            query->addBindValue(0);
+        }
+        if (query->exec()) status++;
+        if (status == 3)
+        {
+            db->commit();
+        }
+        else
+        {
+            db->rollback();
+        }
     }
     else
     {
         if (ui->lineEdit_passwd->text() != "")
         {
-            query->exec("BEGIN IMMEDIATE TRANSACTION");
-            query->prepare("UPDATE users SET name = ?, passwd = ? WHERE id = ?");
-            query->addBindValue(ui->lineEdit_name->text());
-            query->addBindValue(func_gen_hash(ui->lineEdit_passwd->text()));
-            query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
-            query->exec();
-            query->clear();
-            query->exec("COMMIT");
+            if (ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString() == "SYSDBA")
+            {
+                int ret = QMessageBox::warning(this, tr("Внимание"),
+                                            tr("Вы уверены что хотите изменить пароль пользователя SYSDBA?"),
+                                            QMessageBox::Yes
+                                            | QMessageBox::Cancel,
+                                            QMessageBox::Yes);
+                switch (ret)
+                {
+                    case QMessageBox::Yes:
+                        if (query->exec("ALTER USER " + ui->lineEdit_name->text() + " SET PASSWORD '" + ui->lineEdit_passwd->text() + "'")) status++;
+                        st++;
+                        break;
+                }
+            }
         }
-        else
-        {
-            query->exec("BEGIN IMMEDIATE TRANSACTION");
-            query->prepare("UPDATE users SET name = ? WHERE id = ?");
-            query->addBindValue(ui->lineEdit_name->text());
-            query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
-            query->exec();
-            query->clear();
-            query->exec("COMMIT");
-        }
-        query->exec("BEGIN IMMEDIATE TRANSACTION");
         query->prepare("UPDATE users_access SET ref = ?, load_pp = ?, work_pp = ?, client = ?, report = ? WHERE id = ?");
         if (ui->checkBox_ref->isChecked())
         {
-            query->addBindValue("true");
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("false");
+            query->addBindValue(0);
         }
         if (ui->checkBox_load_pp->isChecked())
         {
-            query->addBindValue("true");
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("false");
+            query->addBindValue(0);
         }
         if (ui->checkBox_work_pp->isChecked())
         {
-            query->addBindValue("true");
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("false");
+            query->addBindValue(0);
         }
         if (ui->checkBox_client->isChecked())
         {
-            query->addBindValue("true");
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("false");
+            query->addBindValue(0);
         }
         if (ui->checkBox_report->isChecked())
         {
-            query->addBindValue("true");
+            query->addBindValue(1);
         }
         else
         {
-            query->addBindValue("false");
+            query->addBindValue(0);
         }
-        query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
-        query->exec();
-        query->clear();
-        query->exec("COMMIT");
+        query->addBindValue(ui->lineEdit_name->text());
+        if (query->exec()) status++;
+        st++;
+        if (status == st)
+        {
+            db->commit();
+        }
+        else
+        {
+            db->rollback();
+        }
     }
     slot_clear_field();
     slot_select_table();
@@ -229,7 +248,8 @@ void class_manage_users::slot_add_user()
 //Удаляем пользователя
 void class_manage_users::slot_del_user()
 {
-    if (ui->tableView->selectionModel()->selectedIndexes().at(1).data().toString() != "admin")
+    int status = 0;
+    if (ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString() != "SYSDBA")
     {
         int ret = QMessageBox::warning(this, tr("Внимание"),
                                     tr("Вы уверены что хотите удалить пользователя?"),
@@ -239,16 +259,17 @@ void class_manage_users::slot_del_user()
         switch (ret)
         {
             case QMessageBox::Yes:
-                query->exec("BEGIN IMMEDIATE TRANSACTION");
-                query->prepare("DELETE FROM users_access WHERE id = ?");
-                query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
-                query->exec();
-                query->clear();
-                query->prepare("DELETE FROM users WHERE id = ?");
-                query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
-                query->exec();
-                query->clear();
-                query->exec("COMMIT");
+                db->transaction();
+                if (query->exec("DROP USER " + ui->lineEdit_name->text())) status++;
+                if (query->exec("DELETE FROM users_access WHERE id = '" + ui->lineEdit_name->text() + "'")) status++;
+                if (status == 2)
+                {
+                    db->commit();
+                }
+                else
+                {
+                    db->rollback();
+                }
                 break;
             case QMessageBox::Cancel:
                 return;
@@ -268,13 +289,6 @@ void class_manage_users::slot_clear_field()
     ui->checkBox_work_pp->setChecked(false);
     ui->checkBox_client->setChecked(false);
     ui->checkBox_report->setChecked(false);
-}
-
-QString class_manage_users::func_gen_hash(QString str)
-{
-    hash->reset();
-    hash->addData(str.toUtf8());
-    return hash->result().toHex();
 }
 
 bool class_manage_users::func_str_to_bool(QString str)

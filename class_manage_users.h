@@ -19,7 +19,7 @@ class class_manage_users : public QWidget
     Q_OBJECT
 
 public:
-    explicit class_manage_users(QWidget *parent = 0);
+    explicit class_manage_users(QWidget *parent, QSqlDatabase *db1);
     ~class_manage_users();
 
 public slots:
@@ -33,10 +33,8 @@ public slots:
 private:
     QSqlQueryModel *model;
     QSqlQuery *query;
-    QCryptographicHash *hash;
     Ui::class_manage_users *ui;
-
-    QString func_gen_hash(QString str);
+    QSqlDatabase *db;
     bool func_str_to_bool(QString str);
 };
 

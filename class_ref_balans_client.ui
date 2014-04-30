@@ -48,7 +48,7 @@
      <item>
       <widget class="QComboBox" name="comboBox_to_client">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="editable">
         <bool>true</bool>
@@ -173,6 +173,9 @@
      </property>
      <property name="selectionBehavior">
       <enum>QAbstractItemView::SelectRows</enum>
+     </property>
+     <property name="sortingEnabled">
+      <bool>true</bool>
      </property>
     </widget>
    </item>

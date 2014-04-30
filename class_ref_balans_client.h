@@ -21,7 +21,7 @@ class class_ref_balans_client : public QWidget
     Q_OBJECT
 
 public:
-    explicit class_ref_balans_client(QWidget *parent = 0);
+    explicit class_ref_balans_client(QWidget *parent, QSqlDatabase *db1);
     ~class_ref_balans_client();
 
 public slots:
@@ -33,6 +33,7 @@ public slots:
     void slot_enable_to_client();
     void slot_sum_balans_client();
     void slot_set_margin();
+    void slot_sort_pp(int sort_id);
 
 signals:
     void signal_send_sum_client(QString);
@@ -41,8 +42,10 @@ private:
     Ui::class_ref_balans_client *ui;
     QSqlQueryModel *model;
     QSqlQuery *query;
-    QString *str_query;
     update_client_balans *ucb;
+    QString query_str;
+    int id_column;
+    QSqlDatabase *db;
 
 };
 

@@ -9,6 +9,8 @@ class_ref_firm::class_ref_firm(QWidget *parent) :
 
     query = new QSqlQuery;
 
+    id_column = 0;
+
     QValidator *validator = new QRegExpValidator(QRegExp("[1-9]\\d{11}"), this);
     ui->lineEdit_inn->setValidator(validator);
 
@@ -29,6 +31,9 @@ class_ref_firm::class_ref_firm(QWidget *parent) :
     connect(ui->pushButton_del_firm, SIGNAL(clicked()), SLOT(slot_del_firm()));
 
     //connect(ui->tableView, SIGNAL(doubleClicked(QModelIndex)), SLOT(slot_show_add_rs()));
+
+    //Сортировка
+    connect(ui->tableView->horizontalHeader(), SIGNAL(sectionClicked(int)), SLOT(slot_sort_pp(int)));
 }
 
 //Включаем кнопку добавить/изменить
@@ -146,12 +151,32 @@ void class_ref_firm::slot_enable_del()
     }
 }
 
+//Сортировка по столбцу
+void class_ref_firm::slot_sort_pp(int sort_id)
+{
+    id_column = sort_id;
+    refresh_tableview();
+}
+
 //Обновляем форму
 void class_ref_firm::refresh_tableview()
 {
-    model->setQuery("SELECT firms.id, firms.name, firms.inn, yn.data FROM firms "
-                    "LEFT JOIN yes_no yn ON yn.id = firms.stroy "
-                    "WHERE firms.id > 0");
+    query_str = "SELECT firms.id, firms.name, firms.inn, yn.data FROM firms "
+                "LEFT JOIN yes_no yn ON yn.id = firms.stroy "
+                "WHERE firms.id > 0 ";
+    if (id_column == 0) query_str += "ORDER BY firms.name ";
+    if (id_column == 1) query_str += "ORDER BY firms.name ";
+    if (id_column == 2) query_str += "ORDER BY firms.inn ";
+    if (id_column == 3) query_str += "ORDER BY yn.data ";
+    if (ui->tableView->horizontalHeader()->sortIndicatorOrder())
+    {
+        query_str += " DESC";
+    }
+    else
+    {
+        query_str += " ASC";
+    }
+    model->setQuery(query_str);
     model->setHeaderData(1,Qt::Horizontal, "Название");
     model->setHeaderData(2,Qt::Horizontal, "ИНН");
     model->setHeaderData(3,Qt::Horizontal, "Строй");

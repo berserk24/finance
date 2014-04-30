@@ -22,6 +22,7 @@ public:
 public slots:
     void slot_select_table();
     void slot_sum_balans_rs();
+    void slot_sort_pp(int sort_id);
 
 signals:
     void signal_send_sum_rs(QString);
@@ -29,6 +30,8 @@ signals:
 private:
     Ui::class_ref_balans_rs *ui;
     QSqlQueryModel *model;
+    QString query_str;
+    int id_column;
 };
 
 #endif // CLASS_REF_BALANS_RS_H

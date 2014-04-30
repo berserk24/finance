@@ -29,12 +29,15 @@ public slots:
     void slot_enable_edit_tarif();
     void select_table();
     void select_tarif();
+    void slot_sort_pp(int sort_id);
 
 private:
     Ui::class_ref_client *ui;
     QSqlQueryModel *model;
     QSqlQuery *query;
     QSqlDatabase *db;
+    QString query_str;
+    int id_column;
 
     void clear_field();
 

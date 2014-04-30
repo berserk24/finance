@@ -10,6 +10,8 @@ class_ref_tarif::class_ref_tarif(QWidget *parent) :
     model = new QSqlQueryModel;
     query = new QSqlQuery;
 
+    id_column = 0;
+
     select_table();
     model->setHeaderData(1,Qt::Horizontal, "Название");
     model->setHeaderData(2,Qt::Horizontal, "По умолчанию");
@@ -23,12 +25,12 @@ class_ref_tarif::class_ref_tarif(QWidget *parent) :
     ui->tableView->setColumnHidden(0,true);
     ui->tableView->setColumnWidth(1, 100);
     ui->tableView->setColumnWidth(2, 150);
-    ui->tableView->setColumnWidth(3, 200);
+    ui->tableView->setColumnWidth(3, 100);
     ui->tableView->setColumnWidth(4, 150);
     ui->tableView->setColumnWidth(5, 150);
     ui->tableView->setColumnWidth(6, 150);
-    ui->tableView->setColumnWidth(7, 150);
-    ui->tableView->setColumnWidth(8, 200);
+    ui->tableView->setColumnWidth(7, 100);
+    ui->tableView->setColumnWidth(8, 100);
 
     QValidator *validator = new QRegExpValidator(QRegExp("[0-9][0-9]|[0-9].[0-9][0-9]|[0-9][0-9].[0-9][0-9]|[0-9][0-9].[0-9]"), this);
     ui->lineEdit_perc_dolg->setValidator(validator);
@@ -51,6 +53,9 @@ class_ref_tarif::class_ref_tarif(QWidget *parent) :
 
     //Удаляем тариф
     connect(ui->pushButton_del, SIGNAL(clicked()), SLOT(slot_del_tarif()));
+
+    //Сортировка
+    connect(ui->tableView->horizontalHeader(), SIGNAL(sectionClicked(int)), SLOT(slot_sort_pp(int)));
 }
 
 //Включем/выключаем кнопку добавить/изменить
@@ -227,15 +232,40 @@ void class_ref_tarif::clear_field()
     ui->lineEdit_perc_trans_out->setText("");
 }
 
+//Сортировка по столбцу
+void class_ref_tarif::slot_sort_pp(int sort_id)
+{
+    id_column = sort_id;
+    select_table();
+}
+
 //Обновляем таблицу
 void class_ref_tarif::select_table()
 {
-    model->setQuery("SELECT tarifs.id, tarifs.name, yn.data, tarifs.t_obnal, "
-                            "tarifs.t_trans_in, tarifs.t_trans_in_s, tarifs.t_trans_out, "
-                            "tarifs.t_kred, tarifs.t_nalic "
-                    "FROM tarifs "
-                    "LEFT JOIN yes_no yn ON yn.id = tarifs.def "
-                    "WHERE tarifs.id > 0");
+    query_str = "SELECT tarifs.id, tarifs.name, yn.data, tarifs.t_obnal, "
+                "tarifs.t_trans_in, tarifs.t_trans_in_s, tarifs.t_trans_out, "
+                "tarifs.t_kred, tarifs.t_nalic "
+                "FROM tarifs "
+                "LEFT JOIN yes_no yn ON yn.id = tarifs.def "
+                "WHERE tarifs.id > 0 ";
+    if (id_column == 0) query_str += "ORDER BY tarifs.name ";
+    if (id_column == 1) query_str += "ORDER BY tarifs.name ";
+    if (id_column == 2) query_str += "ORDER BY yn.data ";
+    if (id_column == 3) query_str += "ORDER BY tarifs.t_obnal ";
+    if (id_column == 4) query_str += "ORDER BY tarifs.t_trans_in ";
+    if (id_column == 5) query_str += "ORDER BY tarifs.t_trans_in_s ";
+    if (id_column == 6) query_str += "ORDER BY tarifs.t_trans_out ";
+    if (id_column == 7) query_str += "ORDER BY tarifs.t_kred ";
+    if (id_column == 8) query_str += "ORDER BY tarifs.t_nalic ";
+    if (ui->tableView->horizontalHeader()->sortIndicatorOrder())
+    {
+        query_str += " DESC";
+    }
+    else
+    {
+        query_str += " ASC";
+    }
+    model->setQuery(query_str);
     ui->tableView->setModel(model);
     ui->tableView->show();
 }

@@ -30,12 +30,15 @@ public slots:
     void slot_del_rs();
     void select_firm();
     void select_table();
+    void slot_sort_pp(int sort_id);
 
 private:
     Ui::class_rss_form *ui;
     QSqlQuery *query, *firm_query;
     QSqlQueryModel *model;
     QSqlDatabase *db;
+    int id_column;
+    QString query_str;
 
 
     void clear_field();

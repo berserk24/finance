@@ -1,15 +1,16 @@
 #include "class_ref_balans_client.h"
 #include "ui_class_ref_balans_client.h"
 
-class_ref_balans_client::class_ref_balans_client(QWidget *parent) :
+class_ref_balans_client::class_ref_balans_client(QWidget *parent, QSqlDatabase *db1) :
     QWidget(parent),
     ui(new Ui::class_ref_balans_client)
 {
     ui->setupUi(this);
+    db = db1;
     model = new QSqlQueryModel;
     query = new QSqlQuery;
-    str_query = new QString;
-    ucb = new update_client_balans;
+    id_column = 0;
+    ucb = new update_client_balans(0, db);
 
     ui->lineEdit_summ->setMaximumWidth(150);
     ui->lineEdit_margin->setMaximumWidth(50);
@@ -39,6 +40,8 @@ class_ref_balans_client::class_ref_balans_client(QWidget *parent) :
     //Считаем сумму выделенных строк
     connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(slot_sum_balans_client()));
 
+    //Сортировка
+    connect(ui->tableView->horizontalHeader(), SIGNAL(sectionClicked(int)), SLOT(slot_sort_pp(int)));
 }
 
 //Считаем сумму выделенных строк
@@ -96,22 +99,39 @@ void class_ref_balans_client::slot_select_client()
     query->clear();
 }
 
+//Сортировка по столбцу
+void class_ref_balans_client::slot_sort_pp(int sort_id)
+{
+    id_column = sort_id;
+    slot_select_table();
+}
+
 //Заполняем таблицу
 void class_ref_balans_client::slot_select_table()
 {
-    *str_query = "SELECT clients.name, balans.balans, clients.id "
-                   "FROM client_balans balans "
-                   "LEFT JOIN clients ON clients.id = balans.id "
-                   "WHERE clients.name LIKE '";
+    query_str = "SELECT clients.name, balans.balans, clients.id "
+                "FROM client_balans balans "
+                "LEFT JOIN clients ON clients.id = balans.id "
+                "WHERE clients.name LIKE '";
     if (ui->comboBox_client->currentText() == "Все")
     {
-        *str_query = *str_query + "%'";
+        query_str += "%'";
     }
     else
     {
-        *str_query = *str_query + "%" + ui->comboBox_client->currentText() + "%'";
+        query_str += "%" + ui->comboBox_client->currentText() + "%'";
     }
-    model->setQuery(*str_query);
+    if (id_column == 0) query_str += "ORDER BY clients.name ";
+    if (id_column == 1) query_str += "ORDER BY balans.balans ";
+    if (ui->tableView->horizontalHeader()->sortIndicatorOrder())
+    {
+        query_str += " DESC";
+    }
+    else
+    {
+        query_str += " ASC";
+    }
+    model->setQuery(query_str);
     ui->tableView->setModel(model);
     model->setHeaderData(0,Qt::Horizontal, "Контрагент");
     model->setHeaderData(1,Qt::Horizontal, "Баланс");
@@ -205,9 +225,7 @@ void class_ref_balans_client::slot_edit_balans()
                                 type,
                                 ui->lineEdit_summ->text(),
                                 "",
-                                true,
                                 ui->lineEdit_about->text(),
-                                false,
                                 ui->lineEdit_margin->text(),
                                 ""
                                 );
@@ -218,9 +236,7 @@ void class_ref_balans_client::slot_edit_balans()
                                 "Перевод",
                                 ui->lineEdit_summ->text(),
                                 "",
-                                true,
                                 ui->lineEdit_about->text(),
-                                true,
                                 ui->lineEdit_margin->text(),
                                 ui->comboBox_to_client->itemData(ui->comboBox_to_client->currentIndex()).toString()
                                 );

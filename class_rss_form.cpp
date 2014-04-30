@@ -11,6 +11,8 @@ class_rss_form::class_rss_form(QWidget *parent, QSqlDatabase *db1) :
 
     query = new QSqlQuery;
 
+    id_column = 0;
+
     QValidator *validator;
     validator = new QRegExpValidator(QRegExp("[1-9]\\d{19}"), this);
     ui->lineEdit_number->setValidator(validator);
@@ -55,6 +57,8 @@ class_rss_form::class_rss_form(QWidget *parent, QSqlDatabase *db1) :
     //Удаляем РС
     connect(ui->pushButton_del, SIGNAL(clicked()), SLOT(slot_del_rs()));
 
+    //Сортировка
+    connect(ui->tableView->horizontalHeader(), SIGNAL(sectionClicked(int)), SLOT(slot_sort_pp(int)));
 }
 
 //Добавляем или изменяем РС
@@ -209,13 +213,34 @@ void class_rss_form::select_firm()
     }
 }
 
+//Сортировка по столбцу
+void class_rss_form::slot_sort_pp(int sort_id)
+{
+    id_column = sort_id;
+    select_table();
+}
+
 //Заполняем таблицу
 void class_rss_form::select_table()
 {
-    model->setQuery("SELECT rss.id, rss.name, rss.bik, rss.number, firms.name, firms.id, CAST(rss.start_balans AS VARCHAR(18)) "
-                    "FROM rss "
-                    "LEFT JOIN firms ON rss.firm = firms.id "
-                    "ORDER BY rss.id");
+    query_str = "SELECT rss.id, rss.name, rss.bik, rss.number, firms.name, firms.id, CAST(rss.start_balans AS VARCHAR(18)) "
+                "FROM rss "
+                "LEFT JOIN firms ON rss.firm = firms.id ";
+    if (id_column == 0) query_str += "ORDER BY rss.name ";
+    if (id_column == 1) query_str += "ORDER BY rss.name ";
+    if (id_column == 2) query_str += "ORDER BY rss.bik ";
+    if (id_column == 3) query_str += "ORDER BY rss.number ";
+    if (id_column == 4) query_str += "ORDER BY firms.name ";
+    if (id_column == 6) query_str += "ORDER BY rss.start_balans ";
+    if (ui->tableView->horizontalHeader()->sortIndicatorOrder())
+    {
+        query_str += " DESC";
+    }
+    else
+    {
+        query_str += " ASC";
+    }
+    model->setQuery(query_str);
     ui->tableView->setModel(model);
     ui->tableView->show();
 }

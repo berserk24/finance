@@ -1,15 +1,18 @@
 #include "class_ref_pp.h"
 #include "ui_class_ref_pp.h"
 
-class_ref_pp::class_ref_pp(QWidget *parent, int u_id) :
+class_ref_pp::class_ref_pp(QWidget *parent, QSqlDatabase *db1) :
     QWidget(parent),
     ui(new Ui::class_ref_pp)
 {
     ui->setupUi(this);
 
-    client_id = u_id;
+    db = db1;
+    settings = new QSettings(QSettings::UserScope, "finance", "finance", this);
+
+    //client_id = u_id;
     slot_get_access();
-    ui->pushButton_add_client->setEnabled(access);
+    //ui->pushButton_add_client->setEnabled(access);
 
     ui->dateEdit_date_po->setDate(QDate::currentDate());
     ui->dateEdit_date_s->setDate(QDate::currentDate().addDays(-1));
@@ -26,7 +29,7 @@ class_ref_pp::class_ref_pp(QWidget *parent, int u_id) :
     QValidator *validator2 = new QRegExpValidator(QRegExp("[0-9][0-9]|[0-9],[0-9][0-9]|[0-9][0-9],[0-9][0-9]|[0-9][0-9],[0-9]"), this);
     ui->lineEdit_margin->setValidator(validator2);
 
-    ucb = new update_client_balans;
+    ucb = new update_client_balans(0, db);
 
     id_column = 0;
 
@@ -39,7 +42,7 @@ class_ref_pp::class_ref_pp(QWidget *parent, int u_id) :
     slot_select_pp();
     slot_set_margin();
 
-    QHeaderView *pH = ui->tableView->horizontalHeader();
+    pH = ui->tableView->horizontalHeader();
 
     //Фильтр
     connect(ui->comboBox_rs, SIGNAL(currentIndexChanged(int)), SLOT(slot_select_pp()));
@@ -69,26 +72,39 @@ class_ref_pp::class_ref_pp(QWidget *parent, int u_id) :
     //Сортировка
     connect(pH, SIGNAL(sectionClicked(int)), this, SLOT(slot_sort_pp(int)));
 
+    //Открываем справочник клиентов
     connect(ui->pushButton_add_client, SIGNAL(clicked()), SLOT(slot_send_show_ref_client()));
 
+    //Печатаем реестр
     connect(ui->comboBox_register, SIGNAL(activated(QString)), SLOT(slot_show_print_registr(QString)));
+
+    //Считаем сумму выделенных строк
+    connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(slot_sum_balans_rs()));
+}
+
+//Считаем сумму выделенных строк
+void class_ref_pp::slot_sum_balans_rs()
+{
+    double sum = 0;
+    if (ui->tableView->selectionModel()->hasSelection())
+        for (int i = 0; i < ui->tableView->selectionModel()->selectedRows().size(); i++)
+        {
+            sum += ui->tableView->selectionModel()->selectedRows(2).at(i).data().toDouble();
+        }
+    emit signal_send_sum_pp("Сумма по выделенным строкам: " + QString::number(sum, 'f', 2));
 }
 
 //Заполняем форму настроек отображения колонок
 void class_ref_pp::slot_write_settings_view()
 {
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
-    query->exec("SELECT value FROM settings WHERE name = 'pp_collumn'");
-    query->first();
-    QString str = query->value(0).toString();
+    QString str = get_settings();
     for(int i = 0; i < 10; i++)
     {
         settings_table->slot_set_checkbox(model->headerData(i+1, Qt::Horizontal).toString(), str_to_bool(str.mid(i,1)));
     }
-    query->clear();
-    query->exec("COMMIT");
 }
 
+//Преобразовываем строку в bool
 bool class_ref_pp::str_to_bool(QString str)
 {
     if (str == "1")
@@ -101,7 +117,7 @@ bool class_ref_pp::str_to_bool(QString str)
     }
 }
 
-//
+//Записываем настройки отображения таблицы
 void class_ref_pp::slot_set_settings_header(QList<bool> list)
 {
     QString str = "";
@@ -116,25 +132,10 @@ void class_ref_pp::slot_set_settings_header(QList<bool> list)
             str += "0";
         }
     }
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
-    query->exec("SELECT 'value' FROM settings WHERE name = 'pp_collumn'");
-    query->first();
-
-    if (query->value(0).toString() == "")
-    {
-        query->clear();
-        query->prepare("INSERT INTO settings ('value', name) VALUES (?, ?)");
-    }
-    else
-    {
-        query->clear();
-        query->prepare("UPDATE settings SET 'value' = ? WHERE name = ?");
-    }
-    query->addBindValue(str);
-    query->addBindValue("pp_collumn");
-    query->exec();
-    query->clear();
-    query->exec("COMMIT");
+    settings->beginGroup("table_view");
+    settings->setValue("pp_table", str);
+    settings->endGroup();
+    settings->sync();
     slot_select_pp();
 }
 
@@ -177,7 +178,6 @@ void class_ref_pp::load_rss()
         id = ui->comboBox_rs->currentIndex();
     ui->comboBox_rs->clear();
     ui->comboBox_rs->addItem("Все", 0);
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
     query->exec("SELECT id, name FROM rss ORDER BY id");
     query->first();
     ui->comboBox_rs->addItem(query->value(1).toString(), QVariant(query->value(0).toInt()));
@@ -186,34 +186,40 @@ void class_ref_pp::load_rss()
         ui->comboBox_rs->addItem(query->value(1).toString(), QVariant(query->value(0).toInt()));
     }
     query->clear();
-    query->exec("COMMIT");
     ui->comboBox_rs->setCurrentIndex(id);
+}
+
+//Получаем настройки
+QString class_ref_pp::get_settings()
+{
+    settings->beginGroup("table_view");
+    QString str = settings->value("pp_table", "1111111111").toString();
+    settings->endGroup();
+    return str;
 }
 
 //Показываем платёжки
 void class_ref_pp::slot_select_pp()
 {
-    QString query_str = "SELECT pp.id, strftime('%d.%m.%Y', date(julianday(pp.date_oper))), CAST(pp.sum AS TEXT), pp_in_out.name, IFNULL(pf.name, IFNULL(pp.payer1 , pp.payer)) AS payerr, IFNULL(rf.name, IFNULL(pp.receiver1, pp.receiver)) AS receiverr, client.name cn, pp.dest_pay, pp.num, type.name, rss.name, client.id, firm.stroy "
+    QString query_str = "SELECT pp.id, pp.date_oper, CAST(pp.sum_pp AS VARCHAR(18)), pp_in_out.data, COALESCE(pf.name, pp.payer1 , pp.payer) AS payerr, COALESCE(rf.name, pp.receiver1, pp.receiver) AS receiverr, clients.name, pp.dest_pay, pp.num, pp_type.data, rss.name, clients.id, firms.stroy "
             "FROM pp "
             "LEFT JOIN rss ON pp.rs_id = rss.id "
-            "LEFT JOIN pp_in_out ON pp.type = pp_in_out.id "
+            "LEFT JOIN pp_in_out ON pp.type_pp = pp_in_out.id "
             "LEFT JOIN pp_to_client ptc ON pp.id = ptc.pp_id "
-            "LEFT JOIN client ON ptc.client_id = client.id "
-            "LEFT JOIN pp_type type ON pp.type_doc = type.id "
-            "LEFT JOIN firm pf ON pf.inn = pp.payer_inn "
-            "LEFT JOIN firm rf ON rf.inn = pp.receiver_inn "
-            "LEFT JOIN firm ON firm.id = rss.firm "
-            "WHERE pp.date_oper >= " + QString::number(ui->dateEdit_date_s->date().toJulianDay())
-            + " AND pp.date_oper <= " + QString::number(ui->dateEdit_date_po->date().toJulianDay())
-            + " AND pp.type_doc < '100' ";
-            //+ " AND pp.type_doc = '" + QString::number(ui->comboBox_type_doc->currentIndex()) + "'";
+            "LEFT JOIN clients ON ptc.client_id = clients.id "
+            "LEFT JOIN pp_type ON pp.type_doc = pp_type.id "
+            "LEFT JOIN firms pf ON pf.inn = pp.payer_inn "
+            "LEFT JOIN firms rf ON rf.inn = pp.receiver_inn "
+            "LEFT JOIN firms ON firms.id = rss.firm "
+            "WHERE pp.date_oper >= '" + ui->dateEdit_date_s->date().toString("dd.MM.yyyy")
+            + "' AND pp.date_oper <= '" + ui->dateEdit_date_po->date().toString("dd.MM.yyyy") + "'";
     switch (ui->comboBox_type_doc->currentIndex())
     {
         case 0:
             query_str += " AND pp.type_doc = '0'";
             break;
         case 1:
-            query_str += " AND (pp.type_doc == '1' OR pp.type_doc == '2')";
+            query_str += " AND (pp.type_doc = '1' OR pp.type_doc = '2')";
             break;
     }
     switch (ui->comboBox_client_filter->currentIndex())
@@ -221,40 +227,44 @@ void class_ref_pp::slot_select_pp()
         case 0:
             break;
         case 1:
-            query_str += " AND cn IS NULL";
+            query_str += " AND clients.name IS NULL";
             break;
         case 2:
-            query_str += " AND cn IS NOT NULL";
+            query_str += " AND clients.name IS NOT NULL";
             break;
         default:
-            query_str += " AND cn = '" + ui->comboBox_client_filter->currentText() + "'";
+            query_str += " AND clients.name = '" + ui->comboBox_client_filter->currentText() + "'";
             break;
     }
     if (ui->lineEdit_firm->text() != "")
-            query_str += " AND (payerr LIKE '%" + ui->lineEdit_firm->text() + "%' OR receiverr LIKE '%" + ui->lineEdit_firm->text() + "%')";
-    if (ui->comboBox_type->currentIndex() > 0) query_str = query_str + " and pp.type = " + QString::number(ui->comboBox_type->currentIndex());
+            query_str += " AND (LOWER(COALESCE(pf.name, pp.payer1 , pp.payer)) LIKE '%" + ui->lineEdit_firm->text().toLower() + "%' OR LOWER(COALESCE(rf.name, pp.receiver1, pp.receiver)) LIKE '%" + ui->lineEdit_firm->text().toLower() + "%')";
+
+    if (ui->comboBox_type->currentIndex() > 0) query_str = query_str + " and pp.type_pp = " + QString::number(ui->comboBox_type->currentIndex());
     if (ui->comboBox_rs->currentIndex() > 0) query_str = query_str + " and pp.rs_id = " + ui->comboBox_rs->itemData(ui->comboBox_rs->currentIndex()).toString();
     if (id_column == 0) query_str += " ORDER BY pp.date_oper";
     if (id_column == 1) query_str += " ORDER BY pp.date_oper";
-    if (id_column == 2) query_str += " ORDER BY pp.sum";
-    if (id_column == 3) query_str += " ORDER BY pp_in_out.name";
+    if (id_column == 2) query_str += " ORDER BY pp.sum_pp";
+    if (id_column == 3) query_str += " ORDER BY pp_in_out.data";
     if (id_column == 4) query_str += " ORDER BY pp.payer1";
     if (id_column == 5) query_str += " ORDER BY pp.receiver1";
-    if (id_column == 6) query_str += " ORDER BY client.name";
+    if (id_column == 6) query_str += " ORDER BY clients.name";
     if (id_column == 7) query_str += " ORDER BY pp.dest_pay";
     if (id_column == 8) query_str += " ORDER BY pp.num";
     if (id_column == 9) query_str += " ORDER BY pp.type_doc";
     if (id_column == 10) query_str += " ORDER BY rss.name";
+    if (ui->tableView->horizontalHeader()->sortIndicatorOrder())
+    {
+        query_str += " DESC";
+    }
+    else
+    {
+        query_str += " ASC";
+    }
     //qDebug() << query_str << endl;
     model->setQuery(query_str);
     ui->tableView->setModel(model);
 
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
-    query->exec("SELECT value FROM settings WHERE name = 'pp_collumn'");
-    query->first();
-    QString str = query->value(0).toString();
-    query->clear();
-    query->exec("COMMIT");
+    QString str = get_settings();
 
     ui->tableView->setColumnHidden(0, true);
     ui->tableView->setColumnHidden(1, !str_to_bool(str.mid(0,1)));
@@ -305,7 +315,7 @@ void class_ref_pp::slot_enable_button()
         {
             ui->pushButton_del->setEnabled(true);
             ui->comboBox_print_save->setEnabled(true);
-            ui->pushButton_to_client->setEnabled(access);
+            //ui->pushButton_to_client->setEnabled(access);
         }
         else
         {
@@ -318,7 +328,7 @@ void class_ref_pp::slot_enable_button()
     {
         ui->pushButton_del->setEnabled(false);
         ui->comboBox_print_save->setEnabled(false);
-        ui->pushButton_to_client->setEnabled(access);
+        //ui->pushButton_to_client->setEnabled(access);
     }
     else
     {
@@ -342,8 +352,7 @@ void class_ref_pp::slot_select_client_filter()
     ui->comboBox_client_filter->addItem("Все");
     ui->comboBox_client_filter->addItem("Незаполнено");
     ui->comboBox_client_filter->addItem("Заполнено");
-    query_cl->exec("BEGIN IMMEDIATE TRANSACTION");
-    query_cl->exec("SELECT id, name FROM client");
+    query_cl->exec("SELECT id, name FROM clients");
     query_cl->first();
     ui->comboBox_client_filter->addItem(query_cl->value(1).toString(), query_cl->value(0).toInt());
     while (query_cl->next())
@@ -351,7 +360,6 @@ void class_ref_pp::slot_select_client_filter()
         ui->comboBox_client_filter->addItem(query_cl->value(1).toString(), query_cl->value(0).toInt());
     }
     query_cl->clear();
-    query_cl->exec("COMMIT");
     ui->comboBox_client_filter->setCurrentIndex(id);
     delete query_cl;
 }
@@ -367,8 +375,7 @@ void class_ref_pp::slot_select_client()
         id = ui->comboBox_client->currentIndex();
     query_cl = new QSqlQuery;
     ui->comboBox_client->clear();
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
-    query_cl->exec("SELECT id, name FROM client");
+    query_cl->exec("SELECT id, name FROM clients");
     query_cl->first();
     ui->comboBox_client->addItem(query_cl->value(1).toString(), query_cl->value(0).toInt());
     while (query_cl->next())
@@ -376,7 +383,6 @@ void class_ref_pp::slot_select_client()
         ui->comboBox_client->addItem(query_cl->value(1).toString(), query_cl->value(0).toInt());
     }
     query_cl->clear();
-    query_cl->exec("COMMIT");
     ui->comboBox_client->setCurrentIndex(id);
     delete query_cl;
 }
@@ -419,9 +425,7 @@ void class_ref_pp::slot_pp_to_client()
                                 query->value(0).toString(),
                                 query->value(1).toString(),
                                 ui->tableView->selectionModel()->selectedRows().at(i).data().toString(),
-                                false,
                                 "",
-                                false,
                                 ui->lineEdit_margin->text(),
                                 ""
                                 );
@@ -444,9 +448,7 @@ void class_ref_pp::slot_pp_to_client()
                             query->value(0).toString(),
                             query->value(1).toString(),
                             ui->tableView->selectionModel()->selectedRows().at(i).data().toString(),
-                            false,
                             "",
-                            false,
                             ui->lineEdit_margin->text(),
                             ""
                             );
@@ -470,8 +472,7 @@ void class_ref_pp::slot_set_margin()
 {
     if (ui->tableView->selectionModel()->hasSelection())
     {
-        query->exec("BEGIN IMMEDIATE TRANSACTION");
-        query->prepare("SELECT t_trans_in, t_trans_in_s, t_trans_out FROM client WHERE id = ?");
+        query->prepare("SELECT t_trans_in, t_trans_in_s, t_trans_out FROM clients WHERE id = ?");
         query->addBindValue(ui->comboBox_client->itemData(ui->comboBox_client->currentIndex()).toString());
         query->exec();
         query->first();
@@ -482,17 +483,16 @@ void class_ref_pp::slot_set_margin()
         }
         else
         {
-            if (ui->tableView->selectionModel()->selectedIndexes().at(12).data().toString() == "true")
+            if (ui->tableView->selectionModel()->selectedIndexes().at(12).data().toString() == "1")
             {
                 ui->lineEdit_margin->setText(query->value(1).toString());
             }
-            if (ui->tableView->selectionModel()->selectedIndexes().at(12).data().toString() == "false")
+            if (ui->tableView->selectionModel()->selectedIndexes().at(12).data().toString() == "0")
             {
                 ui->lineEdit_margin->setText(query->value(0).toString());
             }
         }
         query->clear();
-        query->exec("COMMIT");
     }
     else
     {
@@ -603,6 +603,7 @@ void class_ref_pp::slot_send_show_ref_client()
     emit this->show_ref_client();
 }
 
+//Печать реестра
 void class_ref_pp::slot_show_print_registr(QString str)
 {
     printer = new QPrinter;
@@ -626,6 +627,7 @@ void class_ref_pp::slot_show_print_registr(QString str)
     }
 }
 
+//Сохраняем реестр
 void class_ref_pp::slot_save_register()
 {
     open_dialog = new QFileDialog;
@@ -668,6 +670,7 @@ void class_ref_pp::slot_save_register()
     delete file;
 }
 
+//Вывод превью перед печатью
 void class_ref_pp::slot_print_preview(QPrinter *printer)
 {
     QString strStream;

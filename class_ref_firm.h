@@ -29,6 +29,7 @@ public slots:
     void slot_enable_del();
     void slot_del_firm();
     void slot_show_add_rs();
+    void slot_sort_pp(int sort_id);
 
 private:
     Ui::class_ref_firm *ui;
@@ -37,6 +38,8 @@ private:
     QWidget *form_rss;
     QTableView *tableView;
     QLayout *obj_layout;
+    QString query_str;
+    int id_column;
 
 
     void refresh_tableview();

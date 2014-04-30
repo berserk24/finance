@@ -7,6 +7,7 @@ class_ref_balans_rs::class_ref_balans_rs(QWidget *parent) :
 {
     ui->setupUi(this);
     model = new QSqlQueryModel;
+    id_column = 0;
 
     slot_select_table();
     model->setHeaderData(0,Qt::Horizontal, "Организация");
@@ -24,15 +25,37 @@ class_ref_balans_rs::class_ref_balans_rs(QWidget *parent) :
     //Считаем сумму выделенных строк
     connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(slot_sum_balans_rs()));
 
+    //Сортировка
+    connect(ui->tableView->horizontalHeader(), SIGNAL(sectionClicked(int)), SLOT(slot_sort_pp(int)));
+}
+
+//Сортировка по столбцу
+void class_ref_balans_rs::slot_sort_pp(int sort_id)
+{
+    id_column = sort_id;
+    slot_select_table();
 }
 
 void class_ref_balans_rs::slot_select_table()
 {
-    model->setQuery("SELECT firms.name, rss.name, balans.last_date, CAST(balans.balans + rss.start_balans AS VARCHAR(20)) "
-                    "FROM rss_balans balans "
-                    "LEFT JOIN rss ON balans.id = rss.id "
-                    "LEFT JOIN firms ON rss.firm = firms.id");
+    query_str = "SELECT firms.name, rss.name, balans.last_date, CAST(balans.balans + rss.start_balans AS VARCHAR(20)) "
+                "FROM rss_balans balans "
+                "LEFT JOIN rss ON balans.id = rss.id "
+                "LEFT JOIN firms ON rss.firm = firms.id ";
+    if (id_column == 0) query_str += "ORDER BY firms.name ";
+    if (id_column == 1) query_str += "ORDER BY rss.name ";
+    if (id_column == 2) query_str += "ORDER BY balans.last_date ";
+    if (id_column == 3) query_str += "ORDER BY (balans.balans + rss.start_balans) ";
+    if (ui->tableView->horizontalHeader()->sortIndicatorOrder())
+    {
+        query_str += " DESC";
+    }
+    else
+    {
+        query_str += " ASC";
+    }
 
+    model->setQuery(query_str);
 
     ui->tableView->setModel(model);
 }

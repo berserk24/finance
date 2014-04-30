@@ -1,7 +1,7 @@
 #include "class_ref_client_pay.h"
 #include "ui_class_ref_client_pay.h"
 
-class_ref_client_pay::class_ref_client_pay(QWidget *parent) :
+class_ref_client_pay::class_ref_client_pay(QWidget *parent, QSqlDatabase *db1) :
     QWidget(parent),
     ui(new Ui::class_ref_client_pay)
 {
@@ -10,9 +10,10 @@ class_ref_client_pay::class_ref_client_pay(QWidget *parent) :
     model = new QSqlQueryModel;
     query = new QSqlQuery;
 
+    db = db1;
     ui->tableView->setModel(model);
 
-    ucb = new update_client_balans;
+    ucb = new update_client_balans(0, db);
 
     //ui->comboBox_client->setMinimumHeight(27);
 
@@ -80,7 +81,7 @@ void class_ref_client_pay::select_client()
 {
     ui->comboBox_client->clear();
     ui->comboBox_client->addItem("Все", 0);
-    query->exec("SELECT id, name FROM client");
+    query->exec("SELECT id, name FROM clients");
     query->first();
     ui->comboBox_client->addItem(query->value(1).toString(), query->value(0).toInt());
     while (query->next())
@@ -94,14 +95,14 @@ void class_ref_client_pay::select_client()
 void class_ref_client_pay::slot_select_table()
 {
     ui->tableView->resizeRowsToContents();
-    QString str_query = "SELECT client.name, strftime('%d.%m.%Y', date(julianday(oper.date))), pp.num, rss.name, IFNULL(pp.payer1 , pp.payer) AS payerr, IFNULL(pp.receiver1, pp.receiver) AS receiverr, type.name, oper.text, CAST(oper.summ AS TEXT), oper.margin, client.id, pp.id, oper.id, oper.to_client_id "
-                        "FROM client_operations oper "
-                        "LEFT JOIN client ON oper.id_client = client.id "
+    QString str_query = "SELECT clients.name, oper.date_oper, pp.num, rss.name, COALESCE(pp.payer1 , pp.payer), COALESCE(pp.receiver1, pp.receiver), pio.data, oper.text, CAST(oper.summ AS VARCHAR(18)), CAST(oper.margin AS VARCHAR(18)), clients.id, pp.id, oper.id, oper.to_client_id "
+                        "FROM clients_operations oper "
+                        "LEFT JOIN clients ON oper.id_client = clients.id "
                         "LEFT JOIN pp ON oper.id_pp = pp.id "
-                        "LEFT JOIN pp_in_out type ON oper.type = type.id "
+                        "LEFT JOIN pp_in_out pio ON oper.type_pp = pio.id "
                         "LEFT JOIN rss ON pp.rs_id = rss.id "
-                        "WHERE oper.date <= " + QString::number(ui->dateEdit_po->date().toJulianDay()) +
-                        " AND oper.date >= " + QString::number(ui->dateEdit_s->date().toJulianDay());
+                        "WHERE oper.date_oper <= '" + ui->dateEdit_po->date().toString("dd.MM.yyyy") +
+                        "' AND oper.date_oper >= '" + ui->dateEdit_s->date().toString("dd.MM.yyyy") + "'";
     if (ui->comboBox_client->currentIndex() > 0)
         str_query += " AND client.id = " + ui->comboBox_client->itemData(ui->comboBox_client->currentIndex()).toString();
     if (ui->lineEdit_summ->text() != "")

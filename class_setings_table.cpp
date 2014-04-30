@@ -42,6 +42,8 @@ void class_setings_table::slot_set_collumn_state()
     _close();
 }
 
+
+
 class_setings_table::~class_setings_table()
 {
     delete ui;

@@ -20,6 +20,7 @@
 #include <QTextBrowser>
 #include <QPrintDialog>
 #include <QFile>
+#include <QSettings>
 #include <QDebug>
 
 namespace Ui {
@@ -31,7 +32,7 @@ class class_ref_pp : public QWidget
     Q_OBJECT
 
 public:
-    explicit class_ref_pp(QWidget *parent, int u_id);
+    explicit class_ref_pp(QWidget *parent, QSqlDatabase *db1);
     ~class_ref_pp();
 
 public slots:
@@ -54,6 +55,7 @@ public slots:
     void slot_show_settings_table();
     void slot_write_settings_view();
     void slot_set_settings_header(QList<bool>);
+    void slot_sum_balans_rs();
 
 private:
     Ui::class_ref_pp *ui;
@@ -70,11 +72,16 @@ private:
     QFileDialog *open_dialog;
     QFile *file;
     class_setings_table *settings_table;
+    QSettings *settings;
+    QHeaderView *pH;
+    QSqlDatabase *db;
+    QString get_settings();
 
     bool str_to_bool(QString);
 
 signals:
     void show_ref_client();
+    void signal_send_sum_pp(QString);
 };
 
 #endif // CLASS_REF_PP_H

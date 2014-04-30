@@ -10,6 +10,9 @@ class_ref_client::class_ref_client(QWidget *parent, QSqlDatabase *db1) :
     db = db1;
 
     query = new QSqlQuery;
+
+    id_column = 0;
+
     select_tarif();
     slot_enable_edit_tarif();
 
@@ -30,12 +33,12 @@ class_ref_client::class_ref_client(QWidget *parent, QSqlDatabase *db1) :
     ui->tableView->setColumnWidth(2, 150);
     ui->tableView->setColumnHidden(3,true);
     ui->tableView->setColumnWidth(4, 150);
-    ui->tableView->setColumnWidth(5, 200);
+    ui->tableView->setColumnWidth(5, 100);
     ui->tableView->setColumnWidth(6, 150);
     ui->tableView->setColumnWidth(7, 150);
     ui->tableView->setColumnWidth(8, 150);
-    ui->tableView->setColumnWidth(9, 150);
-    ui->tableView->setColumnWidth(10, 200);
+    ui->tableView->setColumnWidth(9, 100);
+    ui->tableView->setColumnWidth(10, 100);
     ui->tableView->setColumnHidden(11,true);
 
     QValidator *validator = new QRegExpValidator(QRegExp("[0-9][0-9]|[0-9].[0-9][0-9]|[0-9][0-9].[0-9][0-9]|[0-9][0-9].[0-9]"), this);
@@ -64,6 +67,9 @@ class_ref_client::class_ref_client(QWidget *parent, QSqlDatabase *db1) :
     connect(ui->pushButton_del, SIGNAL(clicked()), SLOT(slot_del_client()));
 
     //connect(ui->comboBox_tarif, SIGNAL(activated(int)), SLOT(select_tarif()));
+
+    //Сортировка
+    connect(ui->tableView->horizontalHeader(), SIGNAL(sectionClicked(int)), SLOT(slot_sort_pp(int)));
 }
 
 //Вклучаем выключаем кнопку добавить/изменить
@@ -357,12 +363,38 @@ void class_ref_client::clear_field()
     select_tarif();
 }
 
+//Сортировка по столбцу
+void class_ref_client::slot_sort_pp(int sort_id)
+{
+    id_column = sort_id;
+    select_table();
+}
+
 //Обновляем таблицу
 void class_ref_client::select_table()
 {
-    model->setQuery("SELECT clients.id, clients.name, clients.mail, tarifs.id, tarifs.name, clients.t_obnal, clients.t_trans_in, clients.t_trans_in_s, clients.t_trans_out, clients.t_kred, clients.t_nalic FROM clients "
-                    "LEFT JOIN tarifs ON tarifs.id = clients.tarif "
-                    "WHERE clients.id > 0");
+    query_str = "SELECT clients.id, clients.name, clients.mail, tarifs.id, tarifs.name, clients.t_obnal, clients.t_trans_in, clients.t_trans_in_s, clients.t_trans_out, clients.t_kred, clients.t_nalic FROM clients "
+                "LEFT JOIN tarifs ON tarifs.id = clients.tarif "
+                "WHERE clients.id > 0";
+    if (id_column == 0) query_str += "ORDER BY clients.name ";
+    if (id_column == 1) query_str += "ORDER BY clients.name ";
+    if (id_column == 2) query_str += "ORDER BY clients.mail ";
+    if (id_column == 4) query_str += "ORDER BY tarifs.name ";
+    if (id_column == 5) query_str += "ORDER BY clients.t_obnal ";
+    if (id_column == 6) query_str += "ORDER BY clients.t_trans_in ";
+    if (id_column == 7) query_str += "ORDER BY clients.t_trans_in_s ";
+    if (id_column == 8) query_str += "ORDER BY clients.t_trans_out ";
+    if (id_column == 9) query_str += "ORDER BY clients.t_kred ";
+    if (id_column == 10) query_str += "ORDER BY clients.t_nalic ";
+    if (ui->tableView->horizontalHeader()->sortIndicatorOrder())
+    {
+        query_str += " DESC";
+    }
+    else
+    {
+        query_str += " ASC";
+    }
+    model->setQuery(query_str);
     ui->tableView->setModel(model);
     ui->tableView->show();
 }
