@@ -90,7 +90,17 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="lineEdit_margin"/>
+      <widget class="QLineEdit" name="lineEdit_margin">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="statusTip">
+        <string>Пусто - коммисия из справочника, 0 - без коммиссии</string>
+       </property>
+       <property name="whatsThis">
+        <string/>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="pushButton_to_client">

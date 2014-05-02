@@ -5,7 +5,6 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlQueryModel>
-#include <QCryptographicHash>
 #include <QMessageBox>
 #include <QDebug>
 #include <QSqlError>

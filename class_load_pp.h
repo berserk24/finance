@@ -14,6 +14,7 @@
 #include <QVector>
 #include <QMessageBox>
 #include <QDate>
+#include <QSettings>
 #include "class_pp.h"
 #include "update_client_balans.h"
 #include "class_report_load_pp.h"

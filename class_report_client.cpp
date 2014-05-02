@@ -20,7 +20,7 @@ class_report_client::class_report_client(QWidget *parent) :
 void class_report_client::slot_select_client()
 {
     ui->comboBox_client->clear();
-    query->exec("SELECT id, name FROM client");
+    query->exec("SELECT id, name FROM clients");
     query->first();
     ui->comboBox_client->addItem(query->value(1).toString(), query->value(0).toInt());
     while (query->next())
@@ -37,36 +37,37 @@ void class_report_client::slot_gen_report()
     double in_bn, in_n, out_bn, out_n, margin, sum;
     in_bn = in_n = out_bn = out_n = margin = sum = 0;
     if (ui->comboBox_client->currentText() != "Наш счёт")
-        query->prepare("SELECT strftime('%d.%m.%Y', date(julianday(oper.date))), IFNULL(pf.name, IFNULL(pp.payer1 , pp.payer)) AS payerr, IFNULL(rf.name, IFNULL(pp.receiver1, pp.receiver)) AS receiverr, type.id, CAST(oper.summ AS TEXT), oper.margin, oper.to_client_id, oper.id_client, client.name, oper.id_pp, oper.text, cl_to.name "
-                   "FROM client_operations oper "
+        query->prepare("SELECT oper.date_oper, COALESCE(pf.name, pp.payer1 , pp.payer), COALESCE(rf.name, pp.receiver1, pp.receiver), type.id, CAST(oper.summ AS VARCHAR(18)), oper.margin, oper.to_client_id, oper.id_client, clients.name, oper.id_pp, oper.text, cl_to.name "
+                   "FROM clients_operations oper "
                    "LEFT JOIN pp ON oper.id_pp = pp.id "
-                   "LEFT JOIN pp_in_out type ON oper.type = type.id "
-                   "LEFT JOIN firm pf ON pf.inn = pp.payer_inn "
-                   "LEFT JOIN firm rf ON rf.inn = pp.receiver_inn "
-                   "LEFT JOIN client ON client.id = oper.id_client "
-                   "LEFT JOIN client cl_to ON cl_to.id = oper.to_client_id "
-                   "WHERE oper.date <= ? "
-                   "AND oper.date >= ? "
+                   "LEFT JOIN pp_in_out type ON oper.type_pp = type.id "
+                   "LEFT JOIN firms pf ON pf.inn = pp.payer_inn "
+                   "LEFT JOIN firms rf ON rf.inn = pp.receiver_inn "
+                   "LEFT JOIN clients ON clients.id = oper.id_client "
+                   "LEFT JOIN clients cl_to ON cl_to.id = oper.to_client_id "
+                   "WHERE oper.date_oper <= ? "
+                   "AND oper.date_oper >= ? "
                    "AND (oper.id_client = ? OR oper.to_client_id = ?) "
-                   "ORDER BY oper.date");
+                   "ORDER BY oper.date_oper");
     if (ui->comboBox_client->currentText() == "Наш счёт")
-        query->prepare("SELECT strftime('%d.%m.%Y', date(julianday(oper.date))), IFNULL(pf.name, IFNULL(pp.payer1 , pp.payer)) AS payerr, IFNULL(rf.name, IFNULL(pp.receiver1, pp.receiver)) AS receiverr, type.id, CAST(oper.summ AS TEXT), oper.margin, oper.to_client_id, oper.id_client, client.name, oper.id_pp, oper.text, cl_to.name "
-                   "FROM client_operations oper "
+        query->prepare("SELECT oper.date_oper, COALESCE(pf.name, pp.payer1 , pp.payer), COALESCE(rf.name, pp.receiver1, pp.receiver), type.id, CAST(oper.summ AS VARCHAR(18)), oper.margin, oper.to_client_id, oper.id_client, clients.name, oper.id_pp, oper.text, cl_to.name "
+                   "FROM clients_operations oper "
                    "LEFT JOIN pp ON oper.id_pp = pp.id "
-                   "LEFT JOIN pp_in_out type ON oper.type = type.id "
-                   "LEFT JOIN firm pf ON pf.inn = pp.payer_inn "
-                   "LEFT JOIN firm rf ON rf.inn = pp.receiver_inn "
-                   "LEFT JOIN client ON client.id = oper.id_client "
-                   "LEFT JOIN client cl_to ON cl_to.id = oper.to_client_id "
-                   "WHERE oper.date <= ? "
-                   "AND oper.date >= ? "
-                   "AND (oper.id_client = ? OR oper.to_client_id = ? OR CAST(oper.margin AS REAL) > 0) "
-                   "ORDER BY oper.date");
-    query->addBindValue(ui->dateEdit_po->date().toJulianDay());
-    query->addBindValue(ui->dateEdit_s->date().toJulianDay());
+                   "LEFT JOIN pp_in_out type ON oper.type_pp = type.id "
+                   "LEFT JOIN firms pf ON pf.inn = pp.payer_inn "
+                   "LEFT JOIN firms rf ON rf.inn = pp.receiver_inn "
+                   "LEFT JOIN clients ON clients.id = oper.id_client "
+                   "LEFT JOIN clients cl_to ON cl_to.id = oper.to_client_id "
+                   "WHERE oper.date_oper <= ? "
+                   "AND oper.date_oper >= ? "
+                   "AND (oper.id_client = ? OR oper.to_client_id = ? OR oper.margin > 0) "
+                   "ORDER BY oper.date_oper");
+    query->addBindValue(ui->dateEdit_po->date());
+    query->addBindValue(ui->dateEdit_s->date());
     query->addBindValue(ui->comboBox_client->itemData(ui->comboBox_client->currentIndex()));
     query->addBindValue(ui->comboBox_client->itemData(ui->comboBox_client->currentIndex()));
     query->exec();
+    qDebug() << query->lastError().text() << query->size() << endl;
     query->first();
     old_date = query->value(0).toString();
     ui->textEdit->clear();

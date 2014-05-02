@@ -231,6 +231,7 @@ void general_window::slot_show_ref_client_pay()
         client_pay = new class_ref_client_pay(0, db);
         i_client_pay = ui->tabWidget->addTab(client_pay, QString("Движения по счетам контрагентов"));
         ui->tabWidget->setCurrentIndex(i_client_pay);
+        connect(client_pay, SIGNAL(signal_send_sum_opers(QString)), SLOT(slot_set_status_bar_data(QString)));
     }
     else
     {

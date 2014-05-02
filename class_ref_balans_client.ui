@@ -110,6 +110,9 @@
      </item>
      <item>
       <widget class="QLineEdit" name="lineEdit_margin">
+       <property name="statusTip">
+        <string>Пусто - коммисия из справочника, 0 - без коммиссии</string>
+       </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>

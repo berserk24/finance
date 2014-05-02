@@ -57,52 +57,6 @@ void Widget::create_database()
     qDebug() << db->tables().size() << endl;
     if (db->tables().size() < 14)
     {
-        /*
-        //Создаём таблицу пользоваталей
-        {
-            query->exec("CREATE TABLE 'main'.'users' ( \
-                                    'id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, \
-                                    'name' TEXT NOT NULL, \
-                                    'passwd' TEXT, \
-                                    UNIQUE (name COLLATE NOCASE ASC)) \
-                    ");
-        }
-
-        //Создаём пользователя admin
-        {
-            query->exec("   INSERT INTO    users   ( \
-                                                    id, name, passwd  \
-                                                ) \
-                        VALUES ( \
-                                            '0', 'admin', '" + func_gen_hash("admin") + \
-                                            "' )" \
-                    );
-        }
-
-        //Создаём таблицу прав пользоваталей
-        {
-            query->exec("CREATE TABLE 'main'.'users_access' ( \
-                                    'id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, \
-                                    'ref' TEXT NOT NULL, \
-                                    'load_pp' TEXT NOT NULL, \
-                                    'work_pp' TEXT NOT NULL, \
-                                    'report' TEXT NOT NULL, \
-                                    'client' TEXT NOT NULL) \
-                    ");
-        }
-
-        //Права пользователя admin
-        {
-            query->exec("   INSERT INTO    users_access   ( \
-                                                    id, ref, load_pp, work_pp, report, client  \
-                                                ) \
-                        VALUES ( \
-                                            '0', 'true', 'true', 'true', 'true', 'true' \
-                                            ) \
-                    ");
-        }
-*/
-
         //Создаём роль
         {
             query->exec("CREATE ROLE full_access");
@@ -290,25 +244,6 @@ void Widget::create_database()
                         "VALUES ( 0, 0 )");
         }
 
-        //Создаём таблицу движений по счёту клиентов
-        {
-            query->exec("CREATE TABLE clients_operations ("
-                                    "id INTEGER PRIMARY KEY NOT NULL, "
-                                    "id_client INTEGER NOT NULL, "
-                                    "to_client_id INTEGER, "
-                                    "id_pp INTEGER, "
-                                    "type_pp INTEGER NOT NULL, "
-                                    "text VARCHAR(100) NOT NULL, "
-                                    "date_oper DATE NOT NULL, "
-                                    "summ NUMERIC(18,2) NOT NULL, "
-                                    "margin NUMERIC(18,2) NOT NULL)"
-                        );
-            query->exec("CREATE GENERATOR gen_clients_operations_id");
-            query->exec("SET GENERATOR gen_clients_operations_id TO 0");
-            query->exec("CREATE TRIGGER tr_clients_operations FOR clients_operations ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(gen_clients_operations_id, 1);END");
-            query->exec("GRANT ALL ON clients_operations TO full_access");
-        }
-
         //Создаём таблицу тарифов
         {
             query->exec("CREATE TABLE tarifs ( "
@@ -431,11 +366,37 @@ void Widget::create_database()
 
         }
 
+        //Создаём таблицу движений по счёту клиентов
+        {
+            query->exec("CREATE TABLE clients_operations ("
+                                    "id INTEGER PRIMARY KEY NOT NULL, "
+                                    "id_client INTEGER NOT NULL, "
+                                    "to_client_id INTEGER, "
+                                    "id_pp INTEGER, "
+                                    "type_pp INTEGER NOT NULL, "
+                                    "text VARCHAR(100) NOT NULL, "
+                                    "date_oper DATE NOT NULL, "
+                                    "summ NUMERIC(18,2) NOT NULL, "
+                                    "margin NUMERIC(18,2) NOT NULL, "
+                                    "FOREIGN KEY (id_pp) REFERENCES pp(id) "
+                                    "ON DELETE CASCADE "
+                                    "ON UPDATE CASCADE, "
+                                    "UNIQUE (id_pp))"
+                        );
+            query->exec("CREATE GENERATOR gen_clients_operations_id");
+            query->exec("SET GENERATOR gen_clients_operations_id TO 0");
+            query->exec("CREATE TRIGGER tr_clients_operations FOR clients_operations ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(gen_clients_operations_id, 1);END");
+            query->exec("GRANT ALL ON clients_operations TO full_access");
+        }
+
         //Создаём таблицу соотношения платёжек клиенту
         {
             query->exec("CREATE TABLE pp_to_client ("
                                     "pp_id INTEGER PRIMARY KEY NOT NULL, "
                                     "client_id INTEGER NOT NULL, "
+                                    "FOREIGN KEY (pp_id) REFERENCES pp(id) "
+                                    "ON DELETE CASCADE "
+                                    "ON UPDATE CASCADE, "
                                     "UNIQUE (pp_id, client_id))"
                         );
             query->exec("GRANT ALL ON pp_to_client TO full_access");

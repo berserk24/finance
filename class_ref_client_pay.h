@@ -27,6 +27,11 @@ public slots:
     void slot_enable_cancel_button();
     void slot_cancel_pay();
     void select_client();
+    void slot_sort_pp(int sort_id);
+    void slot_sum_client_oper();
+
+signals:
+    void signal_send_sum_opers(QString);
 
 private:
     Ui::class_ref_client_pay *ui;
@@ -34,6 +39,7 @@ private:
     QSqlQueryModel *model;
     update_client_balans *ucb;
     QSqlDatabase *db;
+    int id_column;
 };
 
 #endif // CLASS_REF_CLIENT_PAY_H

@@ -109,7 +109,7 @@ void class_ref_balans_client::slot_sort_pp(int sort_id)
 //Заполняем таблицу
 void class_ref_balans_client::slot_select_table()
 {
-    query_str = "SELECT clients.name, balans.balans, clients.id "
+    query_str = "SELECT clients.name, CAST(balans.balans AS VARCHAR(18)), clients.id "
                 "FROM client_balans balans "
                 "LEFT JOIN clients ON clients.id = balans.id "
                 "WHERE clients.name LIKE '";
@@ -224,7 +224,7 @@ void class_ref_balans_client::slot_edit_balans()
         ucb->slot_update_balans(ui->tableView->selectionModel()->selectedIndexes().at(2).data().toString(),
                                 type,
                                 ui->lineEdit_summ->text(),
-                                "",
+                                QString::null,
                                 ui->lineEdit_about->text(),
                                 ui->lineEdit_margin->text(),
                                 ""
@@ -235,7 +235,7 @@ void class_ref_balans_client::slot_edit_balans()
         ucb->slot_update_balans(ui->tableView->selectionModel()->selectedIndexes().at(2).data().toString(),
                                 "Перевод",
                                 ui->lineEdit_summ->text(),
-                                "",
+                                QString::null,
                                 ui->lineEdit_about->text(),
                                 ui->lineEdit_margin->text(),
                                 ui->comboBox_to_client->itemData(ui->comboBox_to_client->currentIndex()).toString()

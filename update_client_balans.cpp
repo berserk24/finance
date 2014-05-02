@@ -33,7 +33,6 @@ void update_client_balans::slot_update_balans(QString id, QString type, QString 
         m_trans_out = query->value(4).toInt();
         query->clear();
     }
-
     if (pp_id == "")
     {
         if (type == "Приход")
@@ -237,6 +236,7 @@ void update_client_balans::slot_update_balans(QString id, QString type, QString 
 
     //Записываем лог
     {
+        QString str = QString::null;
         query->prepare("INSERT INTO clients_operations (id_client, id_pp, date_oper, summ, type_pp, to_client_id, margin, text) "
                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         query->addBindValue(id);
@@ -246,12 +246,12 @@ void update_client_balans::slot_update_balans(QString id, QString type, QString 
         if (type == "Расход")
         {
             query->addBindValue(1);
-            query->addBindValue("");
+            query->addBindValue(str);
         }
         if (type == "Приход")
         {
             query->addBindValue(2);
-            query->addBindValue("");
+            query->addBindValue(str);
         }
         if (type == "Перевод")
         {
@@ -260,8 +260,10 @@ void update_client_balans::slot_update_balans(QString id, QString type, QString 
         }
         query->addBindValue(sum_margin);
         query->addBindValue(about);
+        qDebug() << st << status << endl;
         if (query->exec()) status++;
         st++;
+        qDebug() << st << status << endl;
         query->clear();
     }
     if (status == st)
@@ -276,107 +278,102 @@ void update_client_balans::slot_update_balans(QString id, QString type, QString 
 
 void update_client_balans::slot_cancel_pay(QString client_id, QString pp_id, QString type, QString summ, QString margin, QString oper_id, QString to_client_id)
 {
-    double balans;
+    int status = 0, st = 0;
 
+    db->transaction();
     //Удаляем привязку платёжки к клиенту
     if (pp_id != "")
     {
         query->prepare("DELETE FROM pp_to_client WHERE pp_id = ? AND client_id = ?");
         query->addBindValue(pp_id);
         query->addBindValue(client_id);
-        query->exec();
+        if (query->exec()) status++;
+        st++;
         query->clear();
     }
 
     //Обновляем свой счёт
     if (margin.replace(",", ".").toDouble() != 0)
     {
-        query->exec("SELECT balans FROM client_balans WHERE id = 0");
-        query->first();
-        balans = query->value(0).toDouble();
-        query->clear();
-        query->prepare("UPDATE client_balans SET balans = ? WHERE id = 0");
+        query->prepare("UPDATE client_balans SET balans = (balans + ?) WHERE id = 0");
         if (type == "Приход")
         {
             if (pp_id == "")
             {
-                query->addBindValue(QString::number(balans + margin.replace(",", ".").toDouble(), 'f', 2));
+                query->addBindValue(margin.replace(",", ".").toDouble());
             }
             else
             {
-                query->addBindValue(QString::number(balans - margin.replace(",", ".").toDouble(), 'f', 2));
+                query->addBindValue(-margin.replace(",", ".").toDouble());
             }
         }
         else
         {
-            query->addBindValue(QString::number(balans - margin.replace(",", ".").toDouble(), 'f', 2));
+            query->addBindValue(- margin.replace(",", ".").toDouble());
         }
-        query->exec();
+        if (query->exec()) status++;
+        st++;
     }
 
     //Обновляем счёт клиента
     {
-        //Получаем баланс клиента
-        {
-            query->prepare("SELECT balans FROM client_balans WHERE id = ?");
-            query->addBindValue(client_id);
-            query->exec();
-            query->first();
-            balans = query->value(0).toDouble();
-            query->clear();
-        }
-
         if (type == "Приход")
         {
-            query->prepare("UPDATE client_balans SET balans = ? WHERE id = ?");
+            query->prepare("UPDATE client_balans SET balans = (balans - ?) WHERE id = ?");
             if (pp_id == "")
             {
-                query->addBindValue(QString::number(balans - (summ.replace(",", ".").toDouble() + margin.replace(",", ".").toDouble()), 'f', 2));
+                query->addBindValue(summ.replace(",", ".").toDouble() + margin.replace(",", ".").toDouble());
             }
             else
             {
-                query->addBindValue(QString::number(balans - (summ.replace(",", ".").toDouble() - margin.replace(",", ".").toDouble()), 'f', 2));
+                query->addBindValue(summ.replace(",", ".").toDouble() - margin.replace(",", ".").toDouble());
             }
             query->addBindValue(client_id);
-            query->exec();
+            if (query->exec()) status++;
+            st++;
             query->clear();
         }
         if (type == "Расход")
         {
-            query->prepare("UPDATE client_balans SET balans = ? WHERE id = ?");
-            query->addBindValue(QString::number(balans + (summ.replace(",", ".").toDouble() + margin.replace(",", ".").toDouble()), 'f', 2));
+            query->prepare("UPDATE client_balans SET balans = (balans + ?) WHERE id = ?");
+            query->addBindValue(summ.replace(",", ".").toDouble() + margin.replace(",", ".").toDouble());
             query->addBindValue(client_id);
-            query->exec();
+            if (query->exec()) status++;
+            st++;
             query->clear();
         }
         if (type == "Перевод")
         {
-            query->prepare("UPDATE client_balans SET balans = ? WHERE id = ?");
-            query->addBindValue(QString::number(balans + summ.replace(",", ".").toDouble() + margin.replace(",", ".").toDouble(), 'f', 2));
+            query->prepare("UPDATE client_balans SET balans = (balans + ?) WHERE id = ?");
+            query->addBindValue(summ.replace(",", ".").toDouble() + margin.replace(",", ".").toDouble());
             query->addBindValue(client_id);
-            query->exec();
+            if (query->exec()) status++;
+            st++;
             query->clear();
 
-            query->prepare("SELECT balans FROM client_balans WHERE id = ?");
+            query->prepare("UPDATE client_balans SET balans = balans - ? WHERE id = ?");
+            query->addBindValue(summ.replace(",", ".").toDouble());
             query->addBindValue(to_client_id);
-            query->exec();
-            query->first();
-            balans = query->value(0).toDouble();
-            query->clear();
-
-            query->prepare("UPDATE client_balans SET balans = ? WHERE id = ?");
-            query->addBindValue(QString::number(balans - summ.replace(",", ".").toDouble(), 'f', 2));
-            query->addBindValue(to_client_id);
-            query->exec();
+            if (query->exec()) status++;
+            st++;
             query->clear();
         }
     }
 
     //Удаляем запись из лога
     {
-        query->prepare("DELETE FROM client_operations WHERE id = ?");
+        query->prepare("DELETE FROM clients_operations WHERE id = ?");
         query->addBindValue(oper_id);
-        query->exec();
+        if (query->exec()) status++;
+        st++;
         query->clear();
+    }
+    if (status == st)
+    {
+        db->commit();
+    }
+    else
+    {
+        db->rollback();
     }
 }

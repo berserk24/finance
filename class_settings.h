@@ -2,10 +2,9 @@
 #define CLASS_SETTINGS_H
 
 #include <QWidget>
-#include <QSqlQuery>
+#include <QSettings>
 #include <QFileDialog>
 #include <QDebug>
-#include <QSqlError>
 
 namespace Ui {
 class class_settings;
@@ -22,12 +21,11 @@ public:
 public slots:
     void slot_close();
     void slot_get_settings();
-    void slot_set_settings(QString, QString);
-    void slot_save_settings();
+    void slot_set_settings();
     void slot_select_dir();
 
 private:
-    QSqlQuery *query;
+    QSettings *settings;
     Ui::class_settings *ui;
 };
 

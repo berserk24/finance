@@ -315,13 +315,13 @@ void class_ref_pp::slot_enable_button()
         {
             ui->pushButton_del->setEnabled(true);
             ui->comboBox_print_save->setEnabled(true);
-            //ui->pushButton_to_client->setEnabled(access);
+            ui->pushButton_to_client->setEnabled(true);
         }
         else
         {
             //ui->pushButton_del->setEnabled(false);
             ui->comboBox_print_save->setEnabled(false);
-            //ui->pushButton_to_client->setEnabled(false);
+            ui->pushButton_to_client->setEnabled(false);
         }
     }
     else if (ui->tableView->selectionModel()->selectedIndexes().size() > 12)
@@ -401,8 +401,7 @@ void class_ref_pp::slot_pp_to_client()
                                             QMessageBox::Yes);
             switch (rez) {
                 case QMessageBox::Yes:
-                query->exec("BEGIN IMMEDIATE TRANSACTION");
-                query->prepare("SELECT id, margin FROM client_operations WHERE id_pp = ?");
+                query->prepare("SELECT id, margin FROM clients_operations WHERE id_pp = ?");
                 query->addBindValue(ui->tableView->selectionModel()->selectedRows(0).at(i).data().toString());
                 query->exec();
                 query->first();
@@ -416,7 +415,7 @@ void class_ref_pp::slot_pp_to_client()
                             );
                 query->clear();
 
-                query->prepare("SELECT pio.name, pp.sum FROM pp LEFT JOIN pp_in_out pio ON pp.type = pio.id  WHERE pp.id = ?");
+                query->prepare("SELECT pio.data, pp.sum_pp FROM pp LEFT JOIN pp_in_out pio ON pp.type_pp = pio.id  WHERE pp.id = ?");
                 query->addBindValue(ui->tableView->selectionModel()->selectedRows().at(i).data().toString());
                 query->exec();
                 query->first();
@@ -430,7 +429,6 @@ void class_ref_pp::slot_pp_to_client()
                                 ""
                                 );
                 query->clear();
-                query->exec("COMMIT");
                 break;
            case QMessageBox::Cancel:
                return;
@@ -439,8 +437,7 @@ void class_ref_pp::slot_pp_to_client()
         }
         else
         {
-            query->exec("BEGIN IMMEDIATE TRANSACTION");
-            query->prepare("SELECT pio.name, pp.sum FROM pp LEFT JOIN pp_in_out pio ON pp.type = pio.id  WHERE pp.id = ?");
+            query->prepare("SELECT pio.data, pp.sum_pp FROM pp LEFT JOIN pp_in_out pio ON pp.type_pp = pio.id  WHERE pp.id = ?");
             query->addBindValue(ui->tableView->selectionModel()->selectedRows().at(i).data().toString());
             query->exec();
             query->first();
@@ -453,7 +450,6 @@ void class_ref_pp::slot_pp_to_client()
                             ""
                             );
             query->clear();
-            query->exec("COMMIT");
         }
     }
     slot_clear_form();

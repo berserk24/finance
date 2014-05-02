@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>766</width>
+    <width>854</width>
     <height>421</height>
    </rect>
   </property>
@@ -26,7 +26,11 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="lineEdit_name"/>
+        <widget class="QLineEdit" name="lineEdit_name">
+         <property name="maxLength">
+          <number>15</number>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
@@ -54,6 +58,9 @@
        </item>
        <item>
         <widget class="QLineEdit" name="lineEdit_passwd">
+         <property name="maxLength">
+          <number>20</number>
+         </property>
          <property name="echoMode">
           <enum>QLineEdit::Normal</enum>
          </property>

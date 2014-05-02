@@ -30,10 +30,11 @@ class_load_pp::class_load_pp(QWidget *parent, QSqlDatabase *db1) :
 //Получаем путь к папке с пп из настроек
 void class_load_pp::set_path_to_pp()
 {
-    query->exec("SELECT value FROM settings WHERE name = 'path_to_pp_dir'");
-    query->first();
-    ui->lineEdit_path->setText(query->value(0).toString());
-    query->clear();
+    QSettings *settings = new QSettings(QSettings::UserScope, "finance", "finance", this);
+    settings->beginGroup("Load_pp");
+    ui->lineEdit_path->setText(settings->value("path", "").toString());
+    settings->endGroup();
+    delete settings;
 }
 
 //Открываем окно выбора файла
@@ -527,7 +528,6 @@ void class_load_pp::load_pp(QString file)
         query->addBindValue(vector_pp->at(i).date_send_doc);
         if (query->exec())
         {
-
             //Обновляем баланс расчётного счёта
             {
                 status++;
@@ -551,7 +551,7 @@ void class_load_pp::load_pp(QString file)
             {
                 pp_out_count++;
             }
-            else
+            if (vector_pp->at(i).type.toInt() == 2)
             {
                 pp_in_count++;
             }
@@ -570,24 +570,23 @@ void class_load_pp::load_pp(QString file)
             }
 
 
-            /*if (vector_pp->at(i).type_doc.toInt() > 0)
+            if (vector_pp->at(i).type_doc.toInt() > 0)
             {
                 if (vector_pp->at(i).type.toInt() == 1)
-                query->prepare("SELECT seq FROM sqlite_sequence WHERE name = 'pp'");
-                query->exec();
-                query->first();
-                if (vector_pp->at(i).type.toInt() == 1)
-                    ucb->slot_update_balans("0",
+                    if (query->exec("SELECT gen_id(gen_pp_id, 0) FROM RDB$DATABASE")) status++;
+                    query->first();
+                    if (query->value(0).toString().toInt() != 0)
+                    {
+                        ucb->slot_update_balans("0",
                                         "Расход",
                                         vector_pp->at(i).sum,
                                         query->value(0).toString(),
-                                        false,
                                         vector_pp->at(i).dest_pay,
-                                        true,
                                         "",
                                         ""
                             );
-            }*/
+                    }
+            }
             if (status == 2)
             {
                 db->commit();
@@ -599,21 +598,13 @@ void class_load_pp::load_pp(QString file)
         }
         else
         {
-            //qDebug() << vector_pp->at(i).num << query->lastError().text() << query->lastQuery() << endl;
+            qDebug() << query->lastError().text() << endl;
         }
         query->clear();
         ui->tableWidget->removeRow(0);
     }
-    //qDebug() << old_balans << QString::number(old_balans - summ_out + summ_in, 'f', 2) << summ_out << summ_in << endl;
-    /*if (date_balans <= date_end.toInt())
-    {
-        query->exec("UPDATE rss_balans SET id = " + get_id_rs(rs, bik) + ", date = " + date_end + ", balans = '" + end_balans + "' WHERE id = " + get_id_rs(rs, bik));
-        query->first();
-        query->clear();
-        query->exec("COMMIT");
-    }*/
     delete vector_pp;
-    report += "<tr><td>" + file.right(file.length() - file.lastIndexOf('/') - 1) + "</td><td>" + QString::number(pp_in_count, 'f', 0) + "</td><td>" + QString::number(pp_in_count, 'f', 0) + "</td><td>" + QString::number(pp_in_count + pp_out_count, 'f', 0) + "</td></tr>";
+    report += "<tr><td>" + file.right(file.length() - file.lastIndexOf('/') - 1) + "</td><td>" + QString::number(pp_in_count, 'f', 0) + "</td><td>" + QString::number(pp_out_count, 'f', 0) + "</td><td>" + QString::number(pp_in_count + pp_out_count, 'f', 0) + "</td></tr>";
 }
 
 //Очищаем окно
