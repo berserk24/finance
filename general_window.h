@@ -6,6 +6,8 @@
 #include <QVector>
 #include <QSqlQuery>
 #include <QDebug>
+#include <QThread>
+#include <QtConcurrentRun>
 #include <QLabel>
 #include "class_rss_form.h"
 #include "class_ref_firm.h"
@@ -39,6 +41,7 @@ private:
     class_ref_client *ref_client;
     class_ref_tarif *ref_tarif;
     class_load_pp *load_pp;
+    //QThread *thread;
     class_ref_balans_client *balans_client;
     class_ref_balans_rs *balans_rs;
     class_ref_client_pay *client_pay;

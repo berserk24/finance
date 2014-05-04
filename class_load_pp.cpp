@@ -435,18 +435,17 @@ void class_load_pp::load_pp(QString file)
                break;
          }
     }
-    /*
     query->exec("SELECT date FROM rss_balans WHERE id = " + get_id_rs(rs, bik));
     query->first();
-    date_balans = query->value(0).toInt();
-*/
-    query->exec("SELECT date FROM rss_balans WHERE id = " + get_id_rs(rs, bik));
-    query->first();
-    //double old_balans = query->value(1).toDouble();
     QDate old_date = query->value(0).toDate();
-    //qDebug() << old_balans << endl;
+    pr_dialog->setLabelText("Загрузка файла " + file);
+    pr_dialog->setMinimum(0);
+    pr_dialog->setMaximum(vector_pp->size());
     for(int i = 0; i != vector_pp->size(); i++)
     {
+        pr_dialog->setValue(i);
+        if (pr_dialog->wasCanceled())
+            return;
         db->transaction();
         status = 0;
         query->prepare("INSERT INTO pp (rs_id, client_id, type_pp, type_doc, num, date_pp, date_oper, sum_pp, ticket_date, ticket_time, ticket_value, payer_count,"
@@ -602,8 +601,8 @@ void class_load_pp::load_pp(QString file)
             qDebug() << query->lastError().text() << vector_pp->at(i).num << endl;
         }
         query->clear();
-        ui->tableWidget->removeRow(0);
     }
+    clear_window();
     delete vector_pp;
     report += "<tr><td>" + file.right(file.length() - file.lastIndexOf('/') - 1) + "</td><td>" + QString::number(pp_in_count, 'f', 0) + "</td><td>" + QString::number(pp_out_count, 'f', 0) + "</td><td>" + QString::number(pp_in_count + pp_out_count, 'f', 0) + "</td></tr>";
 }
@@ -677,6 +676,10 @@ QString class_load_pp::get_bik(QTextStream *in)
 //Загрузка платёжек в базу
 void class_load_pp::slot_load_pp_db()
 {
+    pr_dialog = new QProgressDialog(this);
+    pr_dialog->setWindowModality(Qt::WindowModal);
+    pr_dialog->setWindowTitle("Загрузка платёжек в базу");
+    pr_dialog->show();
     if (ui->comboBox_openfile->currentIndex() != 0)
     {
         report = "<b>Загружено платёжек в базу</b><br><table><tr><td><b>Файл</b></td><td><b>Приход</b></td><td><b>Расход</b></td><td><b>Сумма</b></td></tr>";
@@ -717,6 +720,7 @@ void class_load_pp::slot_load_pp_db()
     }
     ui->lineEdit_path->setText("");
     ui->pushButton_load_db->setEnabled(false);
+    delete pr_dialog;
 }
 
 //Получаем id фирмы по ИНН

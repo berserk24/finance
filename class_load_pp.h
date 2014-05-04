@@ -13,6 +13,7 @@
 #include <QSqlError>
 #include <QVector>
 #include <QMessageBox>
+#include <QProgressDialog>
 #include <QDate>
 #include <QSettings>
 #include "class_pp.h"
@@ -56,6 +57,7 @@ private:
     int pp_in_count, pp_out_count;
     class_report_load_pp *report_pp;
     QSqlDatabase *db;
+    QProgressDialog *pr_dialog;
 
     QString set_codec(QTextStream *);
     QString get_bik(QTextStream *);
