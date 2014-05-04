@@ -345,7 +345,7 @@ void Widget::create_database()
                                     "dop_usl VARCHAR(100), "
                                     "num_scheta_postav VARCHAR(100), "
                                     "date_send_doc DATE, "
-                                    "UNIQUE (num, rs_id, type_pp, date_pp), "
+                                    "UNIQUE (num, rs_id, type_pp, date_pp, type_doc, date_oper, sum_pp, payer_count, receiver_count), "
                                     "FOREIGN KEY (rs_id) REFERENCES rss(id) "
                                     "ON DELETE CASCADE "
                                     "ON UPDATE CASCADE)"
@@ -435,7 +435,7 @@ void Widget::slot_login()
     db->setUserName(ui->lineEdit_login->text());
     db->setPassword(ui->lineEdit_passwd->text());
     if (ui->lineEdit_login->text() != "SYSDBA")
-        db->setConnectOptions("ISC_DPB_SQL_ROLE_NAME=full_access");
+        db->setConnectOptions("ISC_DPB_SQL_ROLE_NAME=FULL_ACCESS");
     if (!db->open())
     {
         QString error_db = db->lastError().text();
@@ -447,6 +447,8 @@ void Widget::slot_login()
     {
         query = new QSqlQuery(*db);
         create_database();
+        query->exec(" SELECT current_role FROM rdb$database");
+        query->first();
         //gen_window = new general_window(this, 0);
         hide();
         set_settings();

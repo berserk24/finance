@@ -114,8 +114,11 @@ void class_manage_users::slot_add_user()
     {
         db->transaction();
         if (query->exec("CREATE USER " + ui->lineEdit_name->text() + " PASSWORD '" + ui->lineEdit_passwd->text() + "'")) status++;
-        qDebug() << status << endl;
+        query->clear();
+        qDebug() << query->lastError().text() << endl;
         if (query->exec("GRANT full_access TO " + ui->lineEdit_name->text())) status++;
+        query->clear();
+        qDebug() << query->lastError().text() << endl;
         query->prepare("INSERT INTO users_access (id, ref, load_pp, work_pp, report, client) VALUES(?,?,?,?,?,?)");
         query->addBindValue(ui->lineEdit_name->text());
         if (ui->checkBox_ref->isChecked())
@@ -159,6 +162,8 @@ void class_manage_users::slot_add_user()
             query->addBindValue(0);
         }
         if (query->exec()) status++;
+        query->clear();
+        qDebug() << query->lastError().text() << endl;
         if (status == 3)
         {
             db->commit();

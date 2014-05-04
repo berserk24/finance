@@ -570,6 +570,15 @@ void class_load_pp::load_pp(QString file)
             }
 
 
+            if (status == 2)
+            {
+                db->commit();
+            }
+            else
+            {
+                db->rollback();
+            }
+
             if (vector_pp->at(i).type_doc.toInt() > 0)
             {
                 if (vector_pp->at(i).type.toInt() == 1)
@@ -587,18 +596,10 @@ void class_load_pp::load_pp(QString file)
                             );
                     }
             }
-            if (status == 2)
-            {
-                db->commit();
-            }
-            else
-            {
-                db->rollback();
-            }
         }
         else
         {
-            qDebug() << query->lastError().text() << endl;
+            qDebug() << query->lastError().text() << vector_pp->at(i).num << endl;
         }
         query->clear();
         ui->tableWidget->removeRow(0);

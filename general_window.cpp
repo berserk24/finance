@@ -21,6 +21,8 @@ general_window::general_window(QWidget *parent, QSqlDatabase *db1) :
 
     ui->tabWidget->setTabsClosable(true);
 
+    get_access();
+
     //Показать справочник расчётных счетов
     connect(ui->action_show_rss, SIGNAL(triggered()), SLOT(show_rss_form()));
 
@@ -64,6 +66,67 @@ general_window::general_window(QWidget *parent, QSqlDatabase *db1) :
     //Показываем настройки
     connect(ui->action_setting, SIGNAL(triggered()), SLOT(slot_show_settings_window()));
 
+}
+
+void general_window::get_access()
+{
+    query = new QSqlQuery;
+    query->exec("SELECT * FROM users_access WHERE LOWER(id) = LOWER(CURRENT_USER)");
+    query->first();
+    if (query->value(1).toInt() == 1)
+    {
+        ui->menu_ref->setEnabled(true);
+    }
+    else
+    {
+        ui->menu_ref->setEnabled(false);
+    }
+    if (query->value(2).toInt() == 1)
+    {
+        ui->action_load_pp->setEnabled(true);
+        ui->action_balans_rs->setEnabled(true);
+    }
+    else
+    {
+        ui->action_load_pp->setEnabled(false);
+        ui->action_balans_rs->setEnabled(false);
+    }
+    if (query->value(3).toInt() == 1)
+    {
+        ui->action_pp->setEnabled(true);
+        ui->action_client_pays->setEnabled(true);
+    }
+    else
+    {
+        ui->action_pp->setEnabled(false);
+        ui->action_client_pays->setEnabled(false);
+    }
+    if (query->value(4).toInt() == 1)
+    {
+        ui->action_rep_client->setEnabled(true);
+    }
+    else
+    {
+        ui->action_rep_client->setEnabled(false);
+    }
+    if (query->value(5).toInt() == 1)
+    {
+        ui->action_balans_client->setEnabled(true);
+    }
+    else
+    {
+        ui->action_balans_client->setEnabled(false);
+    }
+    if (query->value(0).toString() == "SYSDBA")
+    {
+        ui->action_users->setEnabled(true);
+    }
+    else
+    {
+        ui->action_users->setEnabled(false);
+    }
+    query->clear();
+    delete query;
 }
 
 //Показываем настройки

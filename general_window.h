@@ -71,6 +71,7 @@ public slots:
     void slot_set_enable_menu(int id);
     void slot_set_status_bar_data(QString);
     void slot_show_settings_window();
+    void get_access();
 
 };
 

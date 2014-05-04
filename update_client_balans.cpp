@@ -260,10 +260,8 @@ void update_client_balans::slot_update_balans(QString id, QString type, QString 
         }
         query->addBindValue(sum_margin);
         query->addBindValue(about);
-        qDebug() << st << status << endl;
         if (query->exec()) status++;
         st++;
-        qDebug() << st << status << endl;
         query->clear();
     }
     if (status == st)
