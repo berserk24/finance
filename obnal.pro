@@ -32,7 +32,8 @@ SOURCES += main.cpp\
     class_report_client.cpp \
     class_setings_table.cpp \
     class_settings.cpp \
-    class_report_load_pp.cpp
+    class_report_load_pp.cpp \
+    class_ref_auto_actions.cpp
 
 HEADERS  += widget.h \
     general_window.h \
@@ -52,7 +53,8 @@ HEADERS  += widget.h \
     class_report_client.h \
     class_setings_table.h \
     class_settings.h \
-    class_report_load_pp.h
+    class_report_load_pp.h \
+    class_ref_auto_actions.h
 
 FORMS    += widget.ui \
     general_window.ui \
@@ -71,7 +73,8 @@ FORMS    += widget.ui \
     class_report_client.ui \
     class_setings_table.ui \
     class_settings.ui \
-    class_report_load_pp.ui
+    class_report_load_pp.ui \
+    class_ref_auto_actions.ui
 
 RESOURCES += \
     language.qrc

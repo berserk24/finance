@@ -85,6 +85,7 @@
     </property>
     <addaction name="action_setting"/>
     <addaction name="action_users"/>
+    <addaction name="action_auto_actions"/>
    </widget>
    <widget class="QMenu" name="menu_report">
     <property name="enabled">
@@ -238,6 +239,11 @@
    </property>
    <property name="text">
     <string>Сохранить как...</string>
+   </property>
+  </action>
+  <action name="action_auto_actions">
+   <property name="text">
+    <string>Автоматическое зачисление</string>
    </property>
   </action>
  </widget>

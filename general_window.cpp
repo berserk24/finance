@@ -15,7 +15,7 @@ general_window::general_window(QWidget *parent, QSqlDatabase *db1) :
     //slot_set_enable_menu(user_id);
 
     i_rs = i_firm = i_client = i_tarif = i_load_pp = i_pp = i_balans_client =
-            i_balans_rs = i_client_pay = i_manage_users = i_report_client = -1;
+            i_balans_rs = i_client_pay = i_manage_users = i_report_client = i_auto_actions = -1;
 
     statusBar()->addWidget(&lb);
 
@@ -65,6 +65,9 @@ general_window::general_window(QWidget *parent, QSqlDatabase *db1) :
 
     //Показываем настройки
     connect(ui->action_setting, SIGNAL(triggered()), SLOT(slot_show_settings_window()));
+
+    //Показываем настройки
+    connect(ui->action_auto_actions, SIGNAL(triggered()), SLOT(slot_show_auto_actions()));
 
 }
 
@@ -180,6 +183,20 @@ void general_window::show_rss_form()
     else
     {
         ui->tabWidget->setCurrentIndex(ui->tabWidget->indexOf(rss_form));
+    }
+}
+
+void general_window::slot_show_auto_actions()
+{
+    if (i_auto_actions == -1)
+    {
+        auto_actions = new class_ref_auto_actions(0, db);
+        i_auto_actions = ui->tabWidget->addTab(auto_actions, QString("Автоматическое зачисление"));
+        ui->tabWidget->setCurrentIndex(i_auto_actions);
+    }
+    else
+    {
+        ui->tabWidget->setCurrentIndex(ui->tabWidget->indexOf(auto_actions));
     }
 }
 

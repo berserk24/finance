@@ -17,15 +17,6 @@ class_ref_pp::class_ref_pp(QWidget *parent, QSqlDatabase *db1) :
     ui->dateEdit_date_po->setDate(QDate::currentDate());
     ui->dateEdit_date_s->setDate(QDate::currentDate().addDays(-1));
 
-    /*{
-        ui->comboBox_rs->setMinimumHeight(27);
-        ui->comboBox_type->setMinimumHeight(27);
-        ui->comboBox_type_doc->setMinimumHeight(27);
-        ui->lineEdit_firm->setMinimumHeight(27);
-        ui->comboBox_client->setMinimumHeight(27);
-        ui->lineEdit_margin->setMaximumHeight(27);
-    }*/
-
     QValidator *validator2 = new QRegExpValidator(QRegExp("[0-9][0-9]|[0-9],[0-9][0-9]|[0-9][0-9],[0-9][0-9]|[0-9][0-9],[0-9]"), this);
     ui->lineEdit_margin->setValidator(validator2);
 
@@ -201,7 +192,7 @@ QString class_ref_pp::get_settings()
 //Показываем платёжки
 void class_ref_pp::slot_select_pp()
 {
-    QString query_str = "SELECT pp.id, pp.date_oper, CAST(pp.sum_pp AS VARCHAR(18)), pp_in_out.data, COALESCE(pf.name, pp.payer1 , pp.payer) AS payerr, COALESCE(rf.name, pp.receiver1, pp.receiver) AS receiverr, clients.name, pp.dest_pay, pp.num, pp_type.data, rss.name, clients.id, firms.stroy "
+    QString query_str = "SELECT pp.id, pp.date_oper, CAST(pp.sum_pp AS VARCHAR(18)), pp_in_out.data, COALESCE(pf.name, pp.payer1 , pp.payer) AS payerr, COALESCE(rf.name, pp.receiver1, pp.receiver) AS receiverr, clients.name, pp.dest_pay, pp.num, pp_type.data, rss.name, clients.id, firms.stroy, pp.payer_inn, pp.receiver_inn "
             "FROM pp "
             "LEFT JOIN rss ON pp.rs_id = rss.id "
             "LEFT JOIN pp_in_out ON pp.type_pp = pp_in_out.id "
@@ -289,6 +280,8 @@ void class_ref_pp::slot_select_pp()
     model->setHeaderData(10,Qt::Horizontal, "Расчётный счёт");
     ui->tableView->setColumnHidden(11, true);
     ui->tableView->setColumnHidden(12, true);
+    ui->tableView->setColumnHidden(13, true);
+    ui->tableView->setColumnHidden(14, true);
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableView->setColumnWidth(1, 100);
     ui->tableView->setColumnWidth(2, 100);
@@ -309,32 +302,59 @@ void class_ref_pp::slot_select_pp()
 void class_ref_pp::slot_enable_button()
 {
     //qDebug() << ui->tableView->selectionModel()->selectedRows() << endl;
-    if (ui->tableView->selectionModel()->selectedIndexes().size() == 13)
+    if (ui->tableView->selectionModel()->selectedIndexes().size() == 15)
     {
         if (ui->tableView->selectionModel()->hasSelection())
         {
             ui->pushButton_del->setEnabled(true);
             ui->comboBox_print_save->setEnabled(true);
             ui->pushButton_to_client->setEnabled(true);
+            query->prepare("SELECT id FROM save_actions WHERE client_id = ? AND inn = ? AND type_pp = ?");
+            query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(11).data().toString());
+            if (ui->tableView->selectionModel()->selectedIndexes().at(3).data().toString() == "Приход")
+            {
+                query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(13).data().toString());
+                query->addBindValue(2);
+            }
+            else
+            {
+                query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(14).data().toString());
+                query->addBindValue(1);
+            }
+            query->exec();
+            query->first();
+            if (query->value(0).toInt() > 0)
+            {
+                ui->checkBox_save_action->setEnabled(false);
+                ui->checkBox_save_action->setChecked(false);
+            }
+            else
+            {
+                ui->checkBox_save_action->setEnabled(true);
+            }
         }
         else
         {
-            //ui->pushButton_del->setEnabled(false);
             ui->comboBox_print_save->setEnabled(false);
             ui->pushButton_to_client->setEnabled(false);
+            ui->checkBox_save_action->setEnabled(false);
+            ui->checkBox_save_action->setChecked(false);
         }
     }
-    else if (ui->tableView->selectionModel()->selectedIndexes().size() > 12)
+    else if (ui->tableView->selectionModel()->selectedIndexes().size() > 15)
     {
         ui->pushButton_del->setEnabled(false);
         ui->comboBox_print_save->setEnabled(false);
-        //ui->pushButton_to_client->setEnabled(access);
+        ui->checkBox_save_action->setEnabled(false);
+        ui->checkBox_save_action->setChecked(false);
     }
     else
     {
         ui->pushButton_del->setEnabled(false);
         ui->comboBox_print_save->setEnabled(false);
         ui->pushButton_to_client->setEnabled(false);
+        ui->checkBox_save_action->setEnabled(false);
+        ui->checkBox_save_action->setChecked(false);
     }
 }
 
@@ -450,6 +470,63 @@ void class_ref_pp::slot_pp_to_client()
                             ""
                             );
             query->clear();
+            if (ui->checkBox_save_action->isChecked())
+            {
+                QString percent = QString::null;
+                query->prepare("SELECT t_trans_in, t_trans_in_s, t_trans_out FROM clients WHERE id = ?");
+                query->addBindValue(ui->comboBox_client->itemData(ui->comboBox_client->currentIndex()).toString());
+                query->exec();
+                query->first();
+                if (ui->tableView->selectionModel()->selectedIndexes().at(3).data().toString() == "Расход")
+                {
+
+                    if (ui->lineEdit_margin->text() == "" or ui->lineEdit_margin->text() == query->value(2).toString())
+                    {}
+                    else
+                    {
+                        percent = ui->lineEdit_margin->text();
+                    }
+                }
+                else
+                {
+                    if (ui->tableView->selectionModel()->selectedIndexes().at(12).data().toString() == "1")
+                    {
+                        if (ui->lineEdit_margin->text() == "" or ui->lineEdit_margin->text() == query->value(1).toString())
+                        {}
+                        else
+                        {
+                            percent = ui->lineEdit_margin->text();
+                        }
+                    }
+                    if (ui->tableView->selectionModel()->selectedIndexes().at(12).data().toString() == "0")
+                    {
+                        if (ui->lineEdit_margin->text() == "" or ui->lineEdit_margin->text() == query->value(0).toString())
+                        {}
+                        else
+                        {
+                            percent = ui->lineEdit_margin->text();
+                        }
+                    }
+                }
+                query->prepare("INSERT INTO save_actions (inn, firm_name, type_pp, client_id, percent) "
+                               "VALUES(?, ?, ?, ?, ?)");
+                if (ui->tableView->selectionModel()->selectedRows(3).at(i).data().toString() == "Приход")
+                {
+                    query->addBindValue(ui->tableView->selectionModel()->selectedRows(13).at(i).data().toString());
+                    query->addBindValue(ui->tableView->selectionModel()->selectedRows(4).at(i).data().toString());
+                    query->addBindValue(2);
+                }
+                else
+                {
+                    query->addBindValue(ui->tableView->selectionModel()->selectedRows(14).at(i).data().toString());
+                    query->addBindValue(ui->tableView->selectionModel()->selectedRows(5).at(i).data().toString());
+                    query->addBindValue(1);
+                }
+                query->addBindValue(ui->comboBox_client->itemData(ui->comboBox_client->currentIndex()).toInt());
+                query->addBindValue(percent);
+                query->exec();
+                query->clear();
+            }
         }
     }
     slot_clear_form();
@@ -460,6 +537,7 @@ void class_ref_pp::slot_pp_to_client()
 void class_ref_pp::slot_clear_form()
 {
     ui->tableView->clearSelection();
+    ui->checkBox_save_action->setChecked(false);
     slot_set_margin();
 }
 

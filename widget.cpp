@@ -54,12 +54,19 @@ void Widget::set_settings()
 
 void Widget::create_database()
 {
-    qDebug() << db->tables().size() << endl;
-    if (db->tables().size() < 14)
+    if (db->tables().size() < 15)
     {
         //Создаём роль
         {
             query->exec("CREATE ROLE full_access");
+        }
+
+        //Создаём таблицу версии БД
+        {
+            query->exec("CREATE TABLE version "
+                        "(id SMALLINT NOT NULL)");
+            query->exec("GRANT ALL ON version TO full_access");
+            query->exec("INSERT INTO version (id) VALUES (1)");
         }
 
         //Создаём таблицу да/нет
@@ -374,7 +381,7 @@ void Widget::create_database()
                                     "to_client_id INTEGER, "
                                     "id_pp INTEGER, "
                                     "type_pp INTEGER NOT NULL, "
-                                    "text VARCHAR(100) NOT NULL, "
+                                    "text VARCHAR(600) NOT NULL, "
                                     "date_oper DATE NOT NULL, "
                                     "summ NUMERIC(18,2) NOT NULL, "
                                     "margin NUMERIC(18,2) NOT NULL, "
@@ -422,6 +429,32 @@ void Widget::create_database()
         }
 
     }
+
+    query->exec("SELECT * FROM version");
+    query->first();
+    if (query->value(0).toInt() < 2)
+    {
+        query->clear();
+        //Создаём таблицу сохранённых действий
+        {
+            query->exec("CREATE TABLE save_actions ( "
+                                    "id INTEGER NOT NULL, "
+                                    "inn VARCHAR(12) NOT NULL, "
+                                    "firm_name VARCHAR(300) NOT NULL, "
+                                    "client_id SMALLINT NOT NULL, "
+                                    "type_pp SMALLINT NOT NULL, "
+                                    "percent NUMERIC(18,2), "
+                                    "PRIMARY KEY (id), "
+                                    "UNIQUE (inn, type_pp, client_id))"
+                        );
+            query->exec("CREATE GENERATOR gen_save_actions_id");
+            query->exec("SET GENERATOR gen_save_actions_id TO 0");
+            query->exec("CREATE TRIGGER tr_save_actions FOR save_actions ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(gen_save_actions_id, 1);END");
+            query->exec("GRANT ALL ON save_actions TO full_access");
+        }
+        query->exec("UPDATE version SET id = 2");
+    }
+
     this->hide();
     gen_window = new general_window(0, db);
     gen_window->show();

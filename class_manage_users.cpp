@@ -112,65 +112,64 @@ void class_manage_users::slot_add_user()
     int status = 0, st = 0;
     if (ui->pushButton_add->text() == "Добавить")
     {
-        db->transaction();
-        if (query->exec("CREATE USER " + ui->lineEdit_name->text() + " PASSWORD '" + ui->lineEdit_passwd->text() + "'")) status++;
-        query->clear();
-        qDebug() << query->lastError().text() << endl;
-        if (query->exec("GRANT full_access TO " + ui->lineEdit_name->text())) status++;
-        query->clear();
-        qDebug() << query->lastError().text() << endl;
-        query->prepare("INSERT INTO users_access (id, ref, load_pp, work_pp, report, client) VALUES(?,?,?,?,?,?)");
-        query->addBindValue(ui->lineEdit_name->text());
-        if (ui->checkBox_ref->isChecked())
+        query->exec("CREATE USER " + ui->lineEdit_name->text() + " PASSWORD '" + ui->lineEdit_passwd->text() + "'");
+        if (!query->lastError().isValid())
         {
-            query->addBindValue(1);
-        }
-        else
-        {
+            db->transaction();
+            if (query->exec("GRANT full_access TO " + ui->lineEdit_name->text())) status++;
+            query->clear();
+            query->prepare("INSERT INTO users_access (id, ref, load_pp, work_pp, report, client) VALUES(?,?,?,?,?,?)");
+            query->addBindValue(ui->lineEdit_name->text());
+            if (ui->checkBox_ref->isChecked())
+            {
+                query->addBindValue(1);
+            }
+            else
+            {
+                query->addBindValue(0);
+            }
+            if (ui->checkBox_load_pp->isChecked())
+            {
+                query->addBindValue(1);
+            }
+            else
+            {
+                query->addBindValue(0);
+            }
+                if (ui->checkBox_work_pp->isChecked())
+            {
+                query->addBindValue(1);
+            }
+            else
+            {
             query->addBindValue(0);
-        }
-        if (ui->checkBox_load_pp->isChecked())
-        {
-            query->addBindValue(1);
-        }
-        else
-        {
-            query->addBindValue(0);
-        }
-        if (ui->checkBox_work_pp->isChecked())
-        {
-            query->addBindValue(1);
-        }
-        else
-        {
-            query->addBindValue(0);
-        }
-        if (ui->checkBox_report->isChecked())
-        {
-            query->addBindValue(1);
-        }
-        else
-        {
-            query->addBindValue(0);
-        }
-        if (ui->checkBox_client->isChecked())
-        {
-            query->addBindValue(1);
-        }
-        else
-        {
-            query->addBindValue(0);
-        }
-        if (query->exec()) status++;
-        query->clear();
-        qDebug() << query->lastError().text() << endl;
-        if (status == 3)
-        {
-            db->commit();
-        }
-        else
-        {
-            db->rollback();
+            }
+            if (ui->checkBox_report->isChecked())
+            {
+                query->addBindValue(1);
+            }
+            else
+            {
+                query->addBindValue(0);
+            }
+            if (ui->checkBox_client->isChecked())
+            {
+                query->addBindValue(1);
+            }
+            else
+            {
+                query->addBindValue(0);
+            }
+            if (query->exec()) status++;
+            query->clear();
+            if (status == 2)
+            {
+                db->commit();
+            }
+            else
+            {
+                db->rollback();
+            }
         }
     }
     else
