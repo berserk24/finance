@@ -37,7 +37,7 @@ void class_report_client::slot_gen_report()
     double in_bn, in_n, out_bn, out_n, margin, sum;
     in_bn = in_n = out_bn = out_n = margin = sum = 0;
     if (ui->comboBox_client->currentText() != "Наш счёт")
-        query->prepare("SELECT oper.date_oper, COALESCE(pf.name, pp.payer1 , pp.payer), COALESCE(rf.name, pp.receiver1, pp.receiver), type.id, CAST(oper.summ AS VARCHAR(18)), oper.margin, oper.to_client_id, oper.id_client, clients.name, oper.id_pp, oper.text, cl_to.name "
+        query->prepare("SELECT oper.date_oper, COALESCE(pf.name, pp.payer1 , pp.payer), COALESCE(rf.name, pp.receiver1, pp.receiver), type.id, CAST(oper.summ AS VARCHAR(18)), oper.margin, oper.to_client_id, oper.id_client, clients.name, pp.num, oper.text, cl_to.name "
                    "FROM clients_operations oper "
                    "LEFT JOIN pp ON oper.id_pp = pp.id "
                    "LEFT JOIN pp_in_out type ON oper.type_pp = type.id "
@@ -50,7 +50,7 @@ void class_report_client::slot_gen_report()
                    "AND (oper.id_client = ? OR oper.to_client_id = ?) "
                    "ORDER BY oper.date_oper");
     if (ui->comboBox_client->currentText() == "Наш счёт")
-        query->prepare("SELECT oper.date_oper, COALESCE(pf.name, pp.payer1 , pp.payer), COALESCE(rf.name, pp.receiver1, pp.receiver), type.id, CAST(oper.summ AS VARCHAR(18)), oper.margin, oper.to_client_id, oper.id_client, clients.name, oper.id_pp, oper.text, cl_to.name "
+        query->prepare("SELECT oper.date_oper, COALESCE(pf.name, pp.payer1 , pp.payer), COALESCE(rf.name, pp.receiver1, pp.receiver), type.id, CAST(oper.summ AS VARCHAR(18)), oper.margin, oper.to_client_id, oper.id_client, clients.name, pp.num, oper.text, cl_to.name "
                    "FROM clients_operations oper "
                    "LEFT JOIN pp ON oper.id_pp = pp.id "
                    "LEFT JOIN pp_in_out type ON oper.type_pp = type.id "

@@ -169,6 +169,7 @@ void general_window::slot_del_tab(int index)
     if (ui->tabWidget->tabText(index) == "Движения по счетам контрагентов") i_client_pay = -1;
     if (ui->tabWidget->tabText(index) == "Управление пользователями") i_manage_users = -1;
     if (ui->tabWidget->tabText(index) == "Отчёт по контрагенту") i_report_client = -1;
+    if (ui->tabWidget->tabText(index) == "Автоматические действия") i_auto_actions = -1;
     ui->tabWidget->removeTab(index);
 }
 
@@ -191,7 +192,7 @@ void general_window::slot_show_auto_actions()
     if (i_auto_actions == -1)
     {
         auto_actions = new class_ref_auto_actions(0, db);
-        i_auto_actions = ui->tabWidget->addTab(auto_actions, QString("Автоматическое зачисление"));
+        i_auto_actions = ui->tabWidget->addTab(auto_actions, QString("Автоматические действия"));
         ui->tabWidget->setCurrentIndex(i_auto_actions);
     }
     else
@@ -401,6 +402,13 @@ void general_window::slot_refresh_tab(int tab)
         else
         {
             ui->menu_view->setEnabled(false);
+        }
+    }
+    if (i_auto_actions > -1)
+    {
+        if (ui->tabWidget->indexOf(auto_actions) == tab)
+        {
+            auto_actions->slot_select_table();
         }
     }
     else

@@ -455,8 +455,8 @@ void class_load_pp::load_pp(QString file)
                                         "type_trans, code, dest_pay, dest_pay1, dest_pay2, dest_pay3, dest_pay4, dest_pay5, dest_pay6,"
                                         "state_sender, payer_kpp, receiver_kpp, pokazatel_kbk, okato, pokazatel_osnovaniya, pokazatel_period,"
                                         "pokazatel_num, pokazatel_date, pokazatel_type, ocherednost, srok_accepta, type_akkred, srok_pay,"
-                                        "usl_pay1, usl_pay2, usl_pay3, pay_po_predst, dop_usl, num_scheta_postav, date_send_doc) "
-                       "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                        "usl_pay1, usl_pay2, usl_pay3, pay_po_predst, dop_usl, num_scheta_postav, date_send_doc, status_pp) "
+                       "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
         query->addBindValue(get_id_rs(rs, bik));
         query->addBindValue(vector_pp->at(i).client_id);
         query->addBindValue(vector_pp->at(i).type);
@@ -525,6 +525,7 @@ void class_load_pp::load_pp(QString file)
         query->addBindValue(vector_pp->at(i).dop_usl);
         query->addBindValue(vector_pp->at(i).num_scheta_postav);
         query->addBindValue(vector_pp->at(i).date_send_doc);
+        query->addBindValue(2);
         if (query->exec())
         {
             //Обновляем баланс расчётного счёта
@@ -545,6 +546,7 @@ void class_load_pp::load_pp(QString file)
                 if (query->exec()) status++;
                 query->clear();
             }
+
 
             if (vector_pp->at(i).type.toInt() == 1)
             {
@@ -578,27 +580,75 @@ void class_load_pp::load_pp(QString file)
                 db->rollback();
             }
 
+            QString pp_id;
+            if (query->exec("SELECT gen_id(gen_pp_id, 0) FROM RDB$DATABASE")) status++;
+            query->first();
+            pp_id = query->value(0).toString();
+            query->clear();
+
             if (vector_pp->at(i).type_doc.toInt() > 0)
             {
                 if (vector_pp->at(i).type.toInt() == 1)
-                    if (query->exec("SELECT gen_id(gen_pp_id, 0) FROM RDB$DATABASE")) status++;
-                    query->first();
-                    if (query->value(0).toString().toInt() != 0)
+                    if (pp_id.toInt() != 0)
                     {
                         ucb->slot_update_balans("0",
                                         "Расход",
                                         vector_pp->at(i).sum,
-                                        query->value(0).toString(),
+                                        pp_id,
                                         vector_pp->at(i).dest_pay,
                                         "",
                                         ""
                             );
                     }
             }
+
+            {
+                query->prepare("SELECT * FROM action_ WHERE inn_ = ?");
+                if (vector_pp->at(i).type == "2")
+                {
+                    query->addBindValue(vector_pp->at(i).payer_inn);
+                }
+                else
+                {
+                    query->addBindValue(vector_pp->at(i).receiver_inn);
+                }
+                query->exec();
+                if (query->first())
+                {
+                    ucb->slot_update_balans(query->value(6).toString(),
+                                    query->value(4).toString(),
+                                    vector_pp->at(i).sum,
+                                    pp_id,
+                                    vector_pp->at(i).dest_pay,
+                                    query->value(5).toString(),
+                                    "");
+                }
+            }
         }
         else
         {
-            qDebug() << query->lastError().text() << vector_pp->at(i).num << endl;
+            qDebug() << query->lastError().text() << endl;
+            if (query->lastError().text().mid(0, 45) == "violation of PRIMARY or UNIQUE KEY constraint")
+            {
+                QString str;
+                query->clear();
+                db->transaction();
+                str = "UPDATE pp SET status_pp=2 "
+                        "WHERE num=" + vector_pp->at(i).num +
+                        " AND rs_id=" + vector_pp->at(i).rs_id +
+                        " AND type_pp=" + vector_pp->at(i).type +
+                        " AND date_pp='" + vector_pp->at(i).date.toString("dd.MM.yyyy") + "'" +
+                        " AND type_doc=" + vector_pp->at(i).type_doc +
+                        " AND date_oper='" + vector_pp->at(i).date_oper.toString("dd.MM.yyyy") + "'" +
+                        " AND sum_pp=" + vector_pp->at(i).sum +
+                        " AND payer_count='" + vector_pp->at(i).payer_count + "'" +
+                        " AND receiver_count='" + vector_pp->at(i).receiver_count + "';";
+                query->exec(str);
+                qDebug() << query->lastQuery() << query->lastError().text() << endl;
+                db->commit();
+                query->clear();
+            }
+
         }
         query->clear();
     }

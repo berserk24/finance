@@ -352,6 +352,7 @@ void Widget::create_database()
                                     "dop_usl VARCHAR(100), "
                                     "num_scheta_postav VARCHAR(100), "
                                     "date_send_doc DATE, "
+                                    "status_pp SMALLINT, "
                                     "UNIQUE (num, rs_id, type_pp, date_pp, type_doc, date_oper, sum_pp, payer_count, receiver_count), "
                                     "FOREIGN KEY (rs_id) REFERENCES rss(id) "
                                     "ON DELETE CASCADE "
@@ -443,9 +444,12 @@ void Widget::create_database()
                                     "firm_name VARCHAR(300) NOT NULL, "
                                     "client_id SMALLINT NOT NULL, "
                                     "type_pp SMALLINT NOT NULL, "
-                                    "percent NUMERIC(18,2), "
+                                    "tarif NUMERIC(18,2), "
                                     "PRIMARY KEY (id), "
-                                    "UNIQUE (inn, type_pp, client_id))"
+                                    "UNIQUE (inn, type_pp, client_id),"
+                                    "FOREIGN KEY (client_id) REFERENCES clients(id) "
+                                    "ON DELETE CASCADE "
+                                    "ON UPDATE CASCADE)"
                         );
             query->exec("CREATE GENERATOR gen_save_actions_id");
             query->exec("SET GENERATOR gen_save_actions_id TO 0");

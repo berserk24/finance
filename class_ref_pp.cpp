@@ -149,14 +149,12 @@ void class_ref_pp::slot_sort_pp(int sort_id)
 void class_ref_pp::slot_get_access()
 {
     query = new QSqlQuery;
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
     query->prepare("SELECT work_pp FROM users_access WHERE id = ?");
     query->addBindValue(client_id);
     query->exec();
     query->first();
     access = query->value(0).toBool();
     query->clear();
-    query->exec("COMMIT");
 }
 
 //Заполняем выпадайку расчётных счетов
@@ -192,7 +190,7 @@ QString class_ref_pp::get_settings()
 //Показываем платёжки
 void class_ref_pp::slot_select_pp()
 {
-    QString query_str = "SELECT pp.id, pp.date_oper, CAST(pp.sum_pp AS VARCHAR(18)), pp_in_out.data, COALESCE(pf.name, pp.payer1 , pp.payer) AS payerr, COALESCE(rf.name, pp.receiver1, pp.receiver) AS receiverr, clients.name, pp.dest_pay, pp.num, pp_type.data, rss.name, clients.id, firms.stroy, pp.payer_inn, pp.receiver_inn "
+    QString query_str = "SELECT pp.id, pp.date_oper, CAST(pp.sum_pp AS VARCHAR(18)), pp_in_out.data, COALESCE(pf.name, pp.payer1 , pp.payer) AS payerr, COALESCE(rf.name, pp.receiver1, pp.receiver) AS receiverr, clients.name, pp.dest_pay, pp.num, pp_type.data, rss.name, clients.id, firms.stroy, pp.payer_inn, pp.receiver_inn, pp.rs_id "
             "FROM pp "
             "LEFT JOIN rss ON pp.rs_id = rss.id "
             "LEFT JOIN pp_in_out ON pp.type_pp = pp_in_out.id "
@@ -282,6 +280,7 @@ void class_ref_pp::slot_select_pp()
     ui->tableView->setColumnHidden(12, true);
     ui->tableView->setColumnHidden(13, true);
     ui->tableView->setColumnHidden(14, true);
+    ui->tableView->setColumnHidden(15, true);
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableView->setColumnWidth(1, 100);
     ui->tableView->setColumnWidth(2, 100);
@@ -302,7 +301,7 @@ void class_ref_pp::slot_select_pp()
 void class_ref_pp::slot_enable_button()
 {
     //qDebug() << ui->tableView->selectionModel()->selectedRows() << endl;
-    if (ui->tableView->selectionModel()->selectedIndexes().size() == 15)
+    if (ui->tableView->selectionModel()->selectedIndexes().size() == 16)
     {
         if (ui->tableView->selectionModel()->hasSelection())
         {
@@ -341,9 +340,10 @@ void class_ref_pp::slot_enable_button()
             ui->checkBox_save_action->setChecked(false);
         }
     }
-    else if (ui->tableView->selectionModel()->selectedIndexes().size() > 15)
+    else if (ui->tableView->selectionModel()->selectedIndexes().size() > 16)
     {
-        ui->pushButton_del->setEnabled(false);
+        ui->pushButton_del->setEnabled(true);
+        ui->pushButton_to_client->setEnabled(true);
         ui->comboBox_print_save->setEnabled(false);
         ui->checkBox_save_action->setEnabled(false);
         ui->checkBox_save_action->setChecked(false);
@@ -577,9 +577,6 @@ void class_ref_pp::slot_set_margin()
 //Отменяем платёжку
 void class_ref_pp::slot_cancel_pp()
 {
-    QString rs_id, type;
-    double sum;
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
     int ret = QMessageBox::warning(this, tr("Внимание"),
                                     tr("Удаление платежей необходимо только при отзыве платежа.\nВы уверены что хотите удалить платёжное поручение?"),
                                     QMessageBox::Yes
@@ -587,7 +584,9 @@ void class_ref_pp::slot_cancel_pp()
                                     QMessageBox::Yes);
     switch (ret) {
        case QMessageBox::Yes:
-            if (ui->tableView->selectionModel()->selectedIndexes().at(6).data().toString() != "")
+        for (int i = 0; i < ui->tableView->selectionModel()->selectedRows().size(); i++)
+        {
+            if (ui->tableView->selectionModel()->selectedRows(6).at(i).data().toString() != "")
             {
                 int rez = QMessageBox::warning(this, tr("Внимание"),
                                                 tr("Платёжное поручение привязано к контрагенту.\nОтменить привязку к контрагенту?"),
@@ -596,21 +595,19 @@ void class_ref_pp::slot_cancel_pp()
                                                 QMessageBox::Yes);
                 switch (rez) {
                     case QMessageBox::Yes:
-                    query->exec("BEGIN IMMEDIATE TRANSACTION");
-                    query->prepare("SELECT id, margin FROM client_operations WHERE id_pp = ?");
-                    query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
+                    query->prepare("SELECT id, margin FROM clients_operations WHERE id_pp = ?");
+                    query->addBindValue(ui->tableView->selectionModel()->selectedRows(0).at(i).data().toString());
                     query->exec();
                     query->first();
-                    ucb->slot_cancel_pay(ui->tableView->selectionModel()->selectedIndexes().at(11).data().toString(),
-                                         ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString(),
-                                         ui->tableView->selectionModel()->selectedIndexes().at(3).data().toString(),
-                                         ui->tableView->selectionModel()->selectedIndexes().at(2).data().toString(),
+                    ucb->slot_cancel_pay(ui->tableView->selectionModel()->selectedRows(11).at(i).data().toString(),
+                                         ui->tableView->selectionModel()->selectedRows(0).at(i).data().toString(),
+                                         ui->tableView->selectionModel()->selectedRows(3).at(i).data().toString(),
+                                         ui->tableView->selectionModel()->selectedRows(2).at(i).data().toString(),
                                          query->value(1).toString(),
                                          query->value(0).toString(),
                                          ""
                                 );
                     query->clear();
-                    query->exec("COMMIT");
                     break;
                case QMessageBox::Cancel:
                    return;
@@ -618,53 +615,40 @@ void class_ref_pp::slot_cancel_pp()
                 }
             }
 
-            query->exec("BEGIN IMMEDIATE TRANSACTION");
-            query->exec("SELECT rs_id, type FROM pp WHERE id = '" + ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString() + "'");
-            query->first();
-            rs_id = query->value(0).toString();
-            type = query->value(1).toString();
+            int status = 0;
+            db->transaction();
+            if (ui->tableView->selectionModel()->selectedRows(3).at(i).data().toString() == "Приход")
+            {
+                query->prepare("UPDATE rss_balans SET balans = (balans - ?) WHERE id = ?");
+            }
+            if (ui->tableView->selectionModel()->selectedRows(3).at(i).data().toString() == "Расход")
+            {
+                query->prepare("UPDATE rss_balans SET balans = (balans + ?) WHERE id = ?");
+            }
+            query->addBindValue(ui->tableView->selectionModel()->selectedRows(2).at(i).data().toString());
+            query->addBindValue(ui->tableView->selectionModel()->selectedRows(15).at(i).data().toString());
+            if (query->exec()) status++;
             query->clear();
 
-            query->prepare("SELECT balans FROM rss_balans WHERE id = ?");
-            query->addBindValue(rs_id);
-            query->exec();
-            query->first();
-            sum = query->value(0).toDouble();
+            query->prepare("DELETE FROM pp WHERE id = ?");
+            query->addBindValue(ui->tableView->selectionModel()->selectedRows(0).at(i).data().toString());
+            if (query->exec()) status++;
             query->clear();
-
-            //qDebug() << sum << endl;
-
-            query->prepare("UPDATE rss_balans SET balans = ? WHERE id = ?");
-            if (type == "1")
+            if (status == 2)
             {
-                query->addBindValue(QString::number(sum + ui->tableView->selectionModel()->selectedIndexes().at(2).data().toDouble(), 'f', 2));
+                db->commit();
             }
-            if (type == "2")
+            else
             {
-                query->addBindValue(QString::number(sum - ui->tableView->selectionModel()->selectedIndexes().at(2).data().toDouble(), 'f', 2));
+                db->rollback();
             }
-            query->addBindValue(rs_id);
-            query->exec();
-
-            if (!query->lastError().isValid())
-            {
-                query->first();
-                query->clear();
-                query->prepare("DELETE FROM pp WHERE id = ?");
-                query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
-                query->exec();
-                query->first();
-                query->clear();
-            }
-            query->exec("COMMIT");
+        }
             slot_select_pp();
             break;
        case QMessageBox::Cancel:
-            query->exec("COMMIT");
            return;
            break;
      }
-    query->exec("COMMIT");
 }
 
 void class_ref_pp::slot_print_pp(QString str)
