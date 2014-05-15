@@ -69,6 +69,13 @@ general_window::general_window(QWidget *parent, QSqlDatabase *db1) :
     //Показываем настройки
     connect(ui->action_auto_actions, SIGNAL(triggered()), SLOT(slot_show_auto_actions()));
 
+    //Обновляем справочник банков
+    connect(ui->action_update_ref_banks, SIGNAL(triggered()), SLOT(slot_show_update_ref_banks()));
+}
+
+void general_window::slot_show_update_ref_banks()
+{
+    update_banks = new class_update_ref_banks;
 }
 
 void general_window::get_access()

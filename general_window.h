@@ -22,6 +22,7 @@
 #include "class_report_client.h"
 #include "class_settings.h"
 #include "class_ref_auto_actions.h"
+#include "class_update_ref_banks.h"
 
 namespace Ui {
 class general_window;
@@ -58,6 +59,7 @@ private:
     i_balans_client, i_balans_rs, i_client_pay, i_client_group, i_manage_users,
     i_balans_group, i_report_client, i_auto_actions;
     class_settings *settings;
+    class_update_ref_banks *update_banks;
 
 public slots:
     void show_rss_form();
@@ -77,6 +79,7 @@ public slots:
     void slot_set_enable_menu(int id);
     void slot_set_status_bar_data(QString);
     void slot_show_settings_window();
+    void slot_show_update_ref_banks();
     void get_access();
 
 };

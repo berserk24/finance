@@ -4,8 +4,9 @@
 #
 #-------------------------------------------------
 
-QT       += core gui sql
-QT       += printsupport
+QT	+= core gui sql
+QT	+= printsupport
+QT	+= network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -33,7 +34,10 @@ SOURCES += main.cpp\
     class_setings_table.cpp \
     class_settings.cpp \
     class_report_load_pp.cpp \
-    class_ref_auto_actions.cpp
+    class_ref_auto_actions.cpp \
+    class_save_bik_ref.cpp \
+    class_update_ref_banks.cpp \
+    downloadmanager.cpp
 
 HEADERS  += widget.h \
     general_window.h \
@@ -54,7 +58,10 @@ HEADERS  += widget.h \
     class_setings_table.h \
     class_settings.h \
     class_report_load_pp.h \
-    class_ref_auto_actions.h
+    class_ref_auto_actions.h \
+    class_save_bik_ref.h \
+    class_update_ref_banks.h \
+    downloadmanager.h
 
 FORMS    += widget.ui \
     general_window.ui \
@@ -74,7 +81,8 @@ FORMS    += widget.ui \
     class_setings_table.ui \
     class_settings.ui \
     class_report_load_pp.ui \
-    class_ref_auto_actions.ui
+    class_ref_auto_actions.ui \
+    class_update_ref_banks.ui
 
 RESOURCES += \
     language.qrc

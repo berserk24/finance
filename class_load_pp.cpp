@@ -644,7 +644,6 @@ void class_load_pp::load_pp(QString file)
                         " AND payer_count='" + vector_pp->at(i).payer_count + "'" +
                         " AND receiver_count='" + vector_pp->at(i).receiver_count + "';";
                 query->exec(str);
-                qDebug() << query->lastQuery() << query->lastError().text() << endl;
                 db->commit();
                 query->clear();
             }
