@@ -26,6 +26,7 @@ public:
     void doDownload(const QUrl &url);
     QString saveFileName(const QUrl &url);
     bool saveToDisk(const QString &filename, QIODevice *data);
+    QDate date;
 
 public slots:
     void execute();

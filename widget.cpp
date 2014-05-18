@@ -458,6 +458,27 @@ void Widget::create_database()
         }
         query->exec("UPDATE version SET id = 2");
     }
+    query->clear();
+    query->exec("SELECT * FROM version");
+    query->first();
+    if (query->value(0).toInt() < 3)
+    {
+        query->clear();
+        //Создаём таблицу сохранённых действий
+        {
+            query->exec("CREATE TABLE update_date ( "
+                                    "id VARCHAR(20) NOT NULL, "
+                                    "data DATE NOT NULL, "
+                                    "PRIMARY KEY (id))"
+                        );
+            query->exec("GRANT ALL ON update_date TO full_access");
+            {
+                query->exec("INSERT INTO update_date (id, data) "
+                            "VALUES ('bik_update', '01.05.2014')");
+            }
+        }
+        query->exec("UPDATE version SET id = 3");
+    }
 
     this->hide();
     gen_window = new general_window(0, db);

@@ -6,6 +6,7 @@
 DownloadManager::DownloadManager()
 {
     // signal finish(), calls downloadFinished()
+    date = QDate::currentDate();
     connect(&manager, SIGNAL(finished(QNetworkReply*)),
             this, SLOT(downloadFinished(QNetworkReply*)));
 }
@@ -14,7 +15,7 @@ void DownloadManager::execute()
 {
     // get the argument including program's name
     QStringList args;
-    args << "http://www.cbr.ru/mcirabis/BIK/bik_db_" + QDate::currentDate().toString("ddMMyyyy") + ".zip";
+    args << "http://www.cbr.ru/mcirabis/BIK/bik_db_" + date.toString("ddMMyyyy") + ".zip";
 
     // skip the first argument, which is the program's name
     //args.takeFirst();
