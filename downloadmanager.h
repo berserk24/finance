@@ -12,6 +12,8 @@
 #include <QTimer>
 #include <QUrl>
 #include <QDate>
+#include <QSqlQuery>
+#include <QTimer>
 #include <QDebug>
 
 
@@ -26,11 +28,17 @@ public:
     void doDownload(const QUrl &url);
     QString saveFileName(const QUrl &url);
     bool saveToDisk(const QString &filename, QIODevice *data);
-    QDate date;
+    QDate date, last_update;
+    QSqlQuery query;
+    QString basename;
 
 public slots:
     void execute();
     bool downloadFinished(QNetworkReply *reply);
+    void slot_get_last_update();
+
+signals:
+    void signal_end_load(QString);
 };
 
 

@@ -7,6 +7,7 @@
 QT	+= core gui sql
 QT	+= printsupport
 QT	+= network
+QT	+= gui-private
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -86,3 +87,4 @@ FORMS    += widget.ui \
 
 RESOURCES += \
     language.qrc
+

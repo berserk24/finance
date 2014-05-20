@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QDebug>
 #include "downloadmanager.h"
+#include "private/qzipreader_p.h"
 
 namespace Ui {
 class class_update_ref_banks;
@@ -21,10 +22,12 @@ public:
 public slots:
     bool download_file();
     void update_ref();
+    void slot_unzip_file(QString);
 
 private:
     Ui::class_update_ref_banks *ui;
     DownloadManager *download_update;
+    QZipReader *zip;
 };
 
 #endif // CLASS_UPDATE_REF_BANKS_H
