@@ -29,7 +29,6 @@ bool class_update_ref_banks::download_file()
 void class_update_ref_banks::slot_unzip_file(QString file)
 {
     zip = new QZipReader(file);
-    qDebug() << QApplication::applicationDirPath() << endl;
     if (zip->exists())
     {
         // распаковка архива по указанному пути
@@ -38,7 +37,31 @@ void class_update_ref_banks::slot_unzip_file(QString file)
         file.open(QIODevice::WriteOnly);
         file.write(data);
         file.close();
+        update_reference_bik();
     }
+}
+
+void class_update_ref_banks::update_reference_bik()
+{
+    QDbf::QDbfTable table;
+    if (!table.open("BNKSEEK.DBF")) {
+        qDebug() << "file open error";
+        return;
+    }
+
+    QTextCodec *codec = QTextCodec::codecForName("IBM 866");
+    while (table.next()) {
+        QString output;
+        QDbf::QDbfRecord record = table.record();
+        for (int i = 0; i < record.count(); ++i) {
+            output.append(record.fieldName(i));
+            output.append(QLatin1String(": "));
+            output.append(codec->toUnicode(record.value(i).toByteArray()).trimmed());
+            output.append(QLatin1String("; "));
+        }
+        qDebug() << output;
+    }
+
 }
 
 class_update_ref_banks::~class_update_ref_banks()

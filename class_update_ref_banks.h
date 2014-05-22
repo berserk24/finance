@@ -3,6 +3,12 @@
 
 #include <QWidget>
 #include <QTimer>
+#include <QSqlDatabase>
+#include <QTextCodec>
+#include "qdbftable.h"
+#include "qdbfrecord.h"
+#include <QSqlQuery>
+#include <QSqlError>
 #include <QDebug>
 #include "downloadmanager.h"
 #include "private/qzipreader_p.h"
@@ -23,6 +29,7 @@ public slots:
     bool download_file();
     void update_ref();
     void slot_unzip_file(QString);
+    void update_reference_bik();
 
 private:
     Ui::class_update_ref_banks *ui;

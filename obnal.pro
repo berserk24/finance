@@ -62,7 +62,10 @@ HEADERS  += widget.h \
     class_ref_auto_actions.h \
     class_save_bik_ref.h \
     class_update_ref_banks.h \
-    downloadmanager.h
+    downloadmanager.h \
+    qdbftable.h \
+    qdbfrecord.h \
+    qdbf_global.h
 
 FORMS    += widget.ui \
     general_window.ui \
@@ -88,3 +91,9 @@ FORMS    += widget.ui \
 RESOURCES += \
     language.qrc
 
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../qdbf/src/build-src-Desktop-Release/lib/release/ -lQDbf
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../qdbf/src/build-src-Desktop-Release/lib/debug/ -lQDbf
+else:unix:!macx: LIBS += -L$$PWD/../../qdbf/src/build-src-Desktop-Release/lib/ -lQDbf
+
+INCLUDEPATH += $$PWD/../../qdbf/src/src
+DEPENDPATH += $$PWD/../../qdbf/src/src
