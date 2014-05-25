@@ -12,6 +12,8 @@ class_ref_auto_actions::class_ref_auto_actions(QWidget *parent, QSqlDatabase *db
     model = new QSqlQueryModel;
     query = new QSqlQuery;
 
+    id_column = 0;
+
     QValidator *validator = new QRegExpValidator(QRegExp("[0-9][0-9]|[0-9].[0-9][0-9]|[0-9][0-9].[0-9][0-9]|[0-9][0-9].[0-9]"), this);
     ui->lineEdit_margin->setValidator(validator);
 
@@ -30,15 +32,14 @@ class_ref_auto_actions::class_ref_auto_actions(QWidget *parent, QSqlDatabase *db
 //Обновляем комиссию
 void class_ref_auto_actions::slot_update_action()
 {
-    QString str = QString::null;
-    query->prepare("UPDATE save_actions SET tarif = ? WHERE id = ?");
+    query->prepare("UPDATE save_actions SET percent = ? WHERE id = ?");
     if (ui->lineEdit_margin->text() != "")
     {
         query->addBindValue(ui->lineEdit_margin->text());
     }
     else
     {
-        query->addBindValue(str);
+        query->addBindValue("-1");
     }
     query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
     query->exec();
@@ -59,13 +60,13 @@ void class_ref_auto_actions::slot_sort_pp(int sort_id)
 //Заполняем таблицу
 void class_ref_auto_actions::slot_select_table()
 {
-    QString query_str = "SELECT * FROM action_ ";
+    QString query_str = "SELECT * FROM action_() ";
     if (id_column == 0) query_str += "ORDER BY action_.id ";
     if (id_column == 1) query_str += "ORDER BY action_.client_name_ ";
     if (id_column == 2) query_str += "ORDER BY action_.inn_ ";
     if (id_column == 3) query_str += "ORDER BY action_.firm_name_ ";
     if (id_column == 4) query_str += "ORDER BY action_.pp_type_ ";
-    if (id_column == 5) query_str += "ORDER BY action_.tarif_ ";
+    if (id_column == 5) query_str += "ORDER BY action_.percent_ ";
     if (ui->tableView->horizontalHeader()->sortIndicatorOrder())
     {
         query_str += " DESC";
@@ -74,6 +75,7 @@ void class_ref_auto_actions::slot_select_table()
     {
         query_str += " ASC";
     }
+    //qDebug() << query_str << endl;
     model->setQuery(query_str);
     model->setHeaderData(1,Qt::Horizontal, "Контрагент");
     model->setHeaderData(2,Qt::Horizontal, "ИНН");
@@ -97,7 +99,14 @@ void class_ref_auto_actions::slot_enable_button()
     if (ui->tableView->selectionModel()->selectedIndexes().size() == 7)
     {
         ui->pushButton_update->setEnabled(true);
-        ui->lineEdit_margin->setText(ui->tableView->selectionModel()->selectedIndexes().at(5).data().toString());
+        if (ui->tableView->selectionModel()->selectedIndexes().at(5).data().toString() != "-1")
+        {
+            ui->lineEdit_margin->setText(ui->tableView->selectionModel()->selectedIndexes().at(5).data().toString());
+        }
+        else
+        {
+            ui->lineEdit_margin->setText("");
+        }
     }
     else
     {

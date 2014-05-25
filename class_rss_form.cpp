@@ -84,10 +84,18 @@ void class_rss_form::slot_add_rs()
         {
             query->addBindValue(ui->comboBox->itemData(ui->comboBox->currentIndex()).toString());
         }
-        query->addBindValue(ui->lineEdit_start_balans->text());
+        if (ui->lineEdit_start_balans->text() != "")
+        {
+            query->addBindValue(ui->lineEdit_start_balans->text());
+        }
+        else
+        {
+            query->addBindValue("0");
+        }
         if (query->exec()) status++;
+        qDebug() << query->lastError().text() << endl;
         query->clear();
-        if (query->exec("SELECT gen_id(gen_rss_id, 0) FROM RDB$DATABASE")) status++;
+        if (query->exec("SELECT currval('seq_rss_id');")) status++;
         query->first();
         id = query->value(0).toString();
         query->clear();

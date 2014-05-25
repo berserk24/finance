@@ -26,18 +26,18 @@ void update_client_balans::slot_update_balans(QString id, QString type, QString 
         if (query->exec()) status++;
         st++;
         query->first();
-        m_obn = query->value(0).toInt();
-        m_nal = query->value(1).toInt();
-        m_trans_in = query->value(2).toInt();
-        m_trans_in_s = query->value(3).toInt();
-        m_trans_out = query->value(4).toInt();
+        m_obn = query->value(0).toDouble();
+        m_nal = query->value(1).toDouble();
+        m_trans_in = query->value(2).toDouble();
+        m_trans_in_s = query->value(3).toDouble();
+        m_trans_out = query->value(4).toDouble();
         query->clear();
     }
     if (pp_id == "")
     {
         if (type == "Приход")
         {
-            if (margin_text == "")
+            if (margin_text == "-1")
             {
                 margin = 1 + m_nal/100;
             }
@@ -50,9 +50,10 @@ void update_client_balans::slot_update_balans(QString id, QString type, QString 
         }
         if (type == "Расход")
         {
-            if (margin_text == "")
+            if (margin_text == "-1")
             {
                 margin = 1 - m_obn/100;
+                qDebug() << m_obn << margin << endl;
             }
             else
             {
@@ -63,7 +64,7 @@ void update_client_balans::slot_update_balans(QString id, QString type, QString 
         }
         if (type == "Перевод")
         {
-            if (margin_text == "")
+            if (margin_text == "-1")
             {
                 margin = 1;
             }
@@ -87,7 +88,7 @@ void update_client_balans::slot_update_balans(QString id, QString type, QString 
     else
     {
         //Коммисия за транзит
-        if (margin_text == "")
+        if (margin_text == "-1")
         {
             query->prepare("SELECT firms.stroy FROM pp "
                            "LEFT JOIN rss ON pp.rs_id = rss.id "
@@ -296,8 +297,10 @@ void update_client_balans::slot_cancel_pay(QString client_id, QString pp_id, QSt
         query->prepare("UPDATE client_balans SET balans = (balans + ?) WHERE id = 0");
         if (type == "Приход")
         {
-            if (pp_id == "")
+            qDebug() << pp_id << endl;
+            if (pp_id == "0")
             {
+                qDebug() << margin.replace(",", ".").toDouble() << endl;
                 query->addBindValue(margin.replace(",", ".").toDouble());
             }
             else
@@ -318,7 +321,7 @@ void update_client_balans::slot_cancel_pay(QString client_id, QString pp_id, QSt
         if (type == "Приход")
         {
             query->prepare("UPDATE client_balans SET balans = (balans - ?) WHERE id = ?");
-            if (pp_id == "")
+            if (pp_id == "0")
             {
                 query->addBindValue(summ.replace(",", ".").toDouble() + margin.replace(",", ".").toDouble());
             }

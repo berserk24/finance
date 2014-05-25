@@ -104,7 +104,7 @@ void class_ref_tarif::slot_add_edit_tarif()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_obnal->text());
+            query->addBindValue(ui->lineEdit_perc_obnal->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_trans_in->text() == "")
         {
@@ -112,7 +112,7 @@ void class_ref_tarif::slot_add_edit_tarif()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_trans_in->text());
+            query->addBindValue(ui->lineEdit_perc_trans_in->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_trans_in_s->text() == "")
         {
@@ -120,7 +120,7 @@ void class_ref_tarif::slot_add_edit_tarif()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_trans_in_s->text());
+            query->addBindValue(ui->lineEdit_perc_trans_in_s->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_trans_out->text() == "")
         {
@@ -128,7 +128,7 @@ void class_ref_tarif::slot_add_edit_tarif()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_trans_out->text());
+            query->addBindValue(ui->lineEdit_perc_trans_out->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_dolg->text() == "")
         {
@@ -136,7 +136,7 @@ void class_ref_tarif::slot_add_edit_tarif()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_dolg->text());
+            query->addBindValue(ui->lineEdit_perc_dolg->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_nal->text() == "")
         {
@@ -144,7 +144,7 @@ void class_ref_tarif::slot_add_edit_tarif()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_nal->text());
+            query->addBindValue(ui->lineEdit_perc_nal->text().replace(",", "."));
         }
     }
     else
@@ -169,7 +169,7 @@ void class_ref_tarif::slot_add_edit_tarif()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_obnal->text());
+            query->addBindValue(ui->lineEdit_perc_obnal->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_trans_in->text() == "")
         {
@@ -177,7 +177,7 @@ void class_ref_tarif::slot_add_edit_tarif()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_trans_in->text());
+            query->addBindValue(ui->lineEdit_perc_trans_in->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_trans_in_s->text() == "")
         {
@@ -185,7 +185,7 @@ void class_ref_tarif::slot_add_edit_tarif()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_trans_in_s->text());
+            query->addBindValue(ui->lineEdit_perc_trans_in_s->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_trans_out->text() == "")
         {
@@ -193,7 +193,7 @@ void class_ref_tarif::slot_add_edit_tarif()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_trans_out->text());
+            query->addBindValue(ui->lineEdit_perc_trans_out->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_dolg->text() == "")
         {
@@ -201,7 +201,7 @@ void class_ref_tarif::slot_add_edit_tarif()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_dolg->text());
+            query->addBindValue(ui->lineEdit_perc_dolg->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_nal->text() == "")
         {
@@ -209,7 +209,7 @@ void class_ref_tarif::slot_add_edit_tarif()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_nal->text());
+            query->addBindValue(ui->lineEdit_perc_nal->text().replace(",", "."));
         }
         query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
     }

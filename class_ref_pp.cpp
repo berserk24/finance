@@ -412,6 +412,15 @@ void class_ref_pp::slot_pp_to_client()
 {
     for (int i = 0; i < ui->tableView->selectionModel()->selectedRows().size(); i++)
     {
+        QString marg;
+        if (ui->lineEdit_margin->text() == "")
+        {
+            marg = "-1";
+        }
+        else
+        {
+            marg = ui->lineEdit_margin->text();
+        }
         if (ui->tableView->selectionModel()->selectedRows(6).at(i).data().toString() != "")
         {
             int rez = QMessageBox::warning(this, tr("Внимание"),
@@ -445,7 +454,7 @@ void class_ref_pp::slot_pp_to_client()
                                 query->value(1).toString(),
                                 ui->tableView->selectionModel()->selectedRows().at(i).data().toString(),
                                 "",
-                                ui->lineEdit_margin->text(),
+                                marg,
                                 ""
                                 );
                 query->clear();
@@ -466,13 +475,14 @@ void class_ref_pp::slot_pp_to_client()
                             query->value(1).toString(),
                             ui->tableView->selectionModel()->selectedRows().at(i).data().toString(),
                             "",
-                            ui->lineEdit_margin->text(),
+                            marg,
                             ""
                             );
             query->clear();
             if (ui->checkBox_save_action->isChecked())
             {
-                QString percent = QString::null;
+                //QString percent = QString::null;
+                QString percent = "-1";
                 query->prepare("SELECT t_trans_in, t_trans_in_s, t_trans_out FROM clients WHERE id = ?");
                 query->addBindValue(ui->comboBox_client->itemData(ui->comboBox_client->currentIndex()).toString());
                 query->exec();

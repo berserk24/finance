@@ -30,11 +30,13 @@ public slots:
     void update_ref();
     void slot_unzip_file(QString);
     void update_reference_bik();
+    void set_last_update();
 
 private:
     Ui::class_update_ref_banks *ui;
     DownloadManager *download_update;
     QZipReader *zip;
+    QSqlQuery *query;
 };
 
 #endif // CLASS_UPDATE_REF_BANKS_H

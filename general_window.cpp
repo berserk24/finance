@@ -127,7 +127,7 @@ void general_window::get_access()
     {
         ui->action_balans_client->setEnabled(false);
     }
-    if (query->value(0).toString() == "SYSDBA")
+    if (query->value(0).toString() == "postgres")
     {
         ui->action_users->setEnabled(true);
     }

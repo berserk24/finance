@@ -58,27 +58,25 @@ void Widget::create_database()
     {
         //Создаём роль
         {
-            query->exec("CREATE ROLE full_access");
+            //query->exec("CREATE ROLE full_access");
         }
 
         //Создаём таблицу версии БД
         {
             query->exec("CREATE TABLE version "
                         "(id SMALLINT NOT NULL)");
-            query->exec("GRANT ALL ON version TO full_access");
+            //query->exec("GRANT ALL ON version TO full_access");
             query->exec("INSERT INTO version (id) VALUES (1)");
         }
 
         //Создаём таблицу да/нет
         {
-            query->exec("   CREATE TABLE yes_no ("
+            query->exec("CREATE TABLE yes_no ("
                                         "id SMALLINT NOT NULL, "
-                                        "data VARCHAR(3) NOT NULL, "
-
-                                        "PRIMARY KEY (id), "
-                                        "UNIQUE      (data));"
+                                        "data VARCHAR(3) UNIQUE, "
+                                        "PRIMARY KEY (id));"
                         );
-            query->exec("GRANT ALL ON yes_no TO full_access");
+            //query->exec("GRANT ALL ON yes_no TO full_access");
         }
         {
             query->exec("   INSERT INTO    yes_no   (id, data) "
@@ -91,11 +89,11 @@ void Widget::create_database()
         {
             query->exec("CREATE TABLE pp_in_out ("
                                     "id SMALLINT NOT NULL, "
-                                    "data VARCHAR(7) NOT NULL, "
-                                    "PRIMARY KEY (id), "
-                                    "UNIQUE (data));"
+                                    "data VARCHAR(7) UNIQUE, "
+                                    "PRIMARY KEY (id));"
                         );
-            query->exec("GRANT ALL ON pp_in_out TO full_access");
+
+            //query->exec("GRANT ALL ON pp_in_out TO full_access");
         }
 
         //Создаём типы платёжек
@@ -112,11 +110,10 @@ void Widget::create_database()
         {
             query->exec("CREATE TABLE pp_type ("
                                     "id SMALLINT NOT NULL, "
-                                    "data VARCHAR(19) NOT NULL, "
-                                    "PRIMARY KEY (id), "
-                                    "UNIQUE (data));"
+                                    "data VARCHAR(19) UNIQUE, "
+                                    "PRIMARY KEY (id));"
                         );
-            query->exec("GRANT ALL ON pp_type TO full_access");
+            //query->exec("GRANT ALL ON pp_type TO full_access");
         }
 
         //Создаём типы платёжек
@@ -131,19 +128,14 @@ void Widget::create_database()
 
         //Создаём таблицу фирм
         {
+            query->exec("CREATE SEQUENCE seq_firms_id");
             query->exec("CREATE TABLE firms ( "
-                                    "id INTEGER NOT NULL, "
-                                    "name VARCHAR(70) NOT NULL, "
-                                    "inn VARCHAR(12) NOT NULL, "
+                                    "id INTEGER NOT NULL DEFAULT nextval('seq_firms_id'), "
+                                    "name VARCHAR(70) UNIQUE, "
+                                    "inn VARCHAR(12) UNIQUE, "
                                     "stroy SMALLINT NOT NULL, "
-                                    "PRIMARY KEY (id), "
-                                    "UNIQUE (name), "
-                                    "UNIQUE (inn))"
+                                    "PRIMARY KEY (id));"
                         );
-            query->exec("CREATE GENERATOR gen_firms_id");
-            query->exec("SET GENERATOR gen_firms_id TO 0");
-            query->exec("CREATE TRIGGER tr_firms FOR firms ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(GEN_FIRMS_ID, 1);END");
-            query->exec("GRANT ALL ON firms TO full_access");
         }
 
         //Создаём фирму 0
@@ -156,8 +148,9 @@ void Widget::create_database()
 
         //Создаём таблицу расчётных счетов
         {
+            query->exec("CREATE SEQUENCE seq_rss_id");
             query->exec("CREATE TABLE rss "
-                        "(id INTEGER NOT NULL, "
+                        "(id INTEGER NOT NULL DEFAULT nextval('seq_rss_id'), "
                         " name VARCHAR(50) NOT NULL, "
                         " bik VARCHAR(9) NOT NULL, "
                         " number VARCHAR(20) NOT NULL, "
@@ -170,24 +163,19 @@ void Widget::create_database()
                         "ON DELETE CASCADE "
                         "ON UPDATE CASCADE)"
                         );
-            query->exec("CREATE GENERATOR gen_rss_id");
-            query->exec("SET GENERATOR gen_rss_id TO 0");
-            query->exec("CREATE TRIGGER tr_rss FOR rss ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(GEN_RSS_ID, 1);END");
-            query->exec("GRANT ALL ON rss TO full_access");
         }
 
         //Создаём таблицу баланса РС
         {
+            query->exec("CREATE SEQUENCE seq_rss_balans_id");
             query->exec("CREATE TABLE rss_balans ( "
-                                    "id INTEGER NOT NULL, "
+                                    "id INTEGER NOT NULL DEFAULT nextval('seq_rss_balans_id'), "
                                     "last_date DATE NOT NULL, "
                                     "balans NUMERIC(18,2) NOT NULL, "
                                     "FOREIGN KEY (id) REFERENCES rss(id) "
                                     "ON DELETE CASCADE "
-                                    "ON UPDATE CASCADE, "
-                                    "UNIQUE (id))"
+                                    "ON UPDATE CASCADE)"
                         );
-            query->exec("GRANT ALL ON rss_balans TO full_access");
         }
 
         //Создаём таблицу настроек
@@ -200,13 +188,13 @@ void Widget::create_database()
                                     "PRIMARY KEY (id), "
                                     "UNIQUE (id_user, name))"
                         );
-            query->exec("GRANT ALL ON settings TO full_access");
         }
 
         //Создаём таблицу контрагентов
         {
+            query->exec("CREATE SEQUENCE seq_clients_id");
             query->exec("CREATE TABLE clients ( "
-                                    "id INTEGER PRIMARY KEY NOT NULL, "
+                                    "id INTEGER PRIMARY KEY NOT NULL DEFAULT nextval('seq_clients_id'), "
                                     "name VARCHAR(30) NOT NULL, "
                                     "mail VARCHAR(50) NOT NULL, "
                                     "tarif SMALLINT NOT NULL, "
@@ -218,10 +206,6 @@ void Widget::create_database()
                                     "t_nalic NUMERIC(3,2) NOT NULL, "
                                     "UNIQUE (name))"
                         );
-            query->exec("CREATE GENERATOR gen_clients_id");
-            query->exec("SET GENERATOR gen_clients_id TO 0");
-            query->exec("CREATE TRIGGER tr_clients FOR clients ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(GEN_CLIENTS_ID, 1);END");
-            query->exec("GRANT ALL ON clients TO full_access");
         }
 
         //Создаём клиента для %ов
@@ -233,15 +217,15 @@ void Widget::create_database()
 
         //Создаём таблицу баланса клиентов
         {
+            query->exec("CREATE SEQUENCE seq_client_balans_id");
             query->exec("CREATE TABLE client_balans ( "
-                                    "id INTEGER NOT NULL, "
+                                    "id INTEGER NOT NULL DEFAULT nextval('seq_client_balans_id'), "
                                     "balans NUMERIC(18,2) NOT NULL, "
                                     "FOREIGN KEY (id) REFERENCES clients(id) "
                                     "ON DELETE CASCADE "
                                     "ON UPDATE CASCADE, "
                                     "PRIMARY KEY (id))"
                         );
-            query->exec("GRANT ALL ON client_balans TO full_access");
         }
 
         //Создаём баланс 0ого клиента
@@ -253,8 +237,9 @@ void Widget::create_database()
 
         //Создаём таблицу тарифов
         {
+            query->exec("CREATE SEQUENCE seq_tarifs_id");
             query->exec("CREATE TABLE tarifs ( "
-                                    "id INTEGER PRIMARY KEY NOT NULL, "
+                                    "id INTEGER PRIMARY KEY NOT NULL DEFAULT nextval('seq_tarifs_id'), "
                                     "name VARCHAR(30) NOT NULL, "
                                     "def SMALLINT NOT NULL, "
                                     "t_obnal NUMERIC(3,2) NOT NULL, "
@@ -263,12 +248,8 @@ void Widget::create_database()
                                     "t_trans_out NUMERIC(3,2) NOT NULL, "
                                     "t_kred NUMERIC(3,2) NOT NULL, "
                                     "t_nalic NUMERIC(3,2) NOT NULL, "
-                                    "UNIQUE (name)) "
+                                    "UNIQUE (name))"
                     );
-            query->exec("CREATE GENERATOR gen_tarifs_id");
-            query->exec("SET GENERATOR gen_tarifs_id TO 0");
-            query->exec("CREATE TRIGGER tr_tarifs FOR tarifs ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(gen_tarifs_id, 1);END");
-            query->exec("GRANT ALL ON tarifs TO full_access");
         }
 
         //Создаём 0ой тариф
@@ -282,8 +263,9 @@ void Widget::create_database()
 
         //Создаём таблицу платёжек
         {
+            query->exec("CREATE SEQUENCE seq_pp_id");
             query->exec("CREATE TABLE pp ("
-                                    "id INTEGER PRIMARY KEY NOT NULL, "
+                                    "id INTEGER PRIMARY KEY NOT NULL DEFAULT nextval('seq_pp_id'), "
                                     "rs_id INTEGER  NOT NULL, "
                                     "client_id INTEGER, "
                                     "type_pp SMALLINT NOT NULL, "
@@ -367,17 +349,13 @@ void Widget::create_database()
             query->exec("CREATE INDEX i_client_id ON pp(client_id)");
             query->exec("CREATE INDEX i_type ON pp(type)");
 
-            query->exec("CREATE GENERATOR gen_pp_id");
-            query->exec("SET GENERATOR gen_pp_id TO 0");
-            query->exec("CREATE TRIGGER tr_pp FOR pp ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(gen_pp_id, 1);END");
-            query->exec("GRANT ALL ON pp TO full_access");
-
         }
 
         //Создаём таблицу движений по счёту клиентов
         {
+            query->exec("CREATE SEQUENCE seq_cl_opers_id");
             query->exec("CREATE TABLE clients_operations ("
-                                    "id INTEGER PRIMARY KEY NOT NULL, "
+                                    "id INTEGER PRIMARY KEY NOT NULL DEFAULT nextval('seq_cl_opers_id'), "
                                     "id_client INTEGER NOT NULL, "
                                     "to_client_id INTEGER, "
                                     "id_pp INTEGER, "
@@ -391,42 +369,38 @@ void Widget::create_database()
                                     "ON UPDATE CASCADE, "
                                     "UNIQUE (id_pp))"
                         );
-            query->exec("CREATE GENERATOR gen_clients_operations_id");
-            query->exec("SET GENERATOR gen_clients_operations_id TO 0");
-            query->exec("CREATE TRIGGER tr_clients_operations FOR clients_operations ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(gen_clients_operations_id, 1);END");
-            query->exec("GRANT ALL ON clients_operations TO full_access");
         }
 
         //Создаём таблицу соотношения платёжек клиенту
         {
+            query->exec("CREATE SEQUENCE seq_pp_to_client_id");
             query->exec("CREATE TABLE pp_to_client ("
-                                    "pp_id INTEGER PRIMARY KEY NOT NULL, "
+                                    "pp_id INTEGER PRIMARY KEY NOT NULL DEFAULT nextval('seq_pp_to_client_id'), "
                                     "client_id INTEGER NOT NULL, "
                                     "FOREIGN KEY (pp_id) REFERENCES pp(id) "
                                     "ON DELETE CASCADE "
                                     "ON UPDATE CASCADE, "
                                     "UNIQUE (pp_id, client_id))"
                         );
-            query->exec("GRANT ALL ON pp_to_client TO full_access");
         }
 
         //Создаём таблицу прав пользоваталей
         {
+            query->exec("CREATE SEQUENCE seq_user_access_id");
             query->exec("CREATE TABLE users_access ("
-                                    "id VARCHAR(18) PRIMARY KEY NOT NULL, "
+                                    "id VARCHAR(18) PRIMARY KEY NOT NULL DEFAULT nextval('seq_pp_to_client_id'), "
                                     "ref SMALLINT NOT NULL, "
                                     "load_pp SMALLINT NOT NULL, "
                                     "work_pp SMALLINT NOT NULL, "
                                     "report SMALLINT NOT NULL, "
                                     "client SMALLINT NOT NULL) "
                         );
-            query->exec("GRANT ALL ON users_access TO full_access");
         }
 
         //Права пользователя admin
         {
             query->exec("INSERT INTO users_access (id, ref, load_pp, work_pp, report, client) "
-                        "VALUES ('SYSDBA', 1, 1, 1, 1, 1)");
+                        "VALUES ('postgres', 1, 1, 1, 1, 1)");
         }
 
     }
@@ -438,46 +412,92 @@ void Widget::create_database()
         query->clear();
         //Создаём таблицу сохранённых действий
         {
+            query->exec("CREATE SEQUENCE seq_save_actions_id");
             query->exec("CREATE TABLE save_actions ( "
-                                    "id INTEGER NOT NULL, "
+                                    "id INTEGER NOT NULL DEFAULT nextval('seq_save_actions_id'), "
                                     "inn VARCHAR(12) NOT NULL, "
                                     "firm_name VARCHAR(300) NOT NULL, "
                                     "client_id SMALLINT NOT NULL, "
                                     "type_pp SMALLINT NOT NULL, "
-                                    "tarif NUMERIC(18,2), "
+                                    "percent NUMERIC(18,2), "
                                     "PRIMARY KEY (id), "
                                     "UNIQUE (inn, type_pp, client_id),"
                                     "FOREIGN KEY (client_id) REFERENCES clients(id) "
                                     "ON DELETE CASCADE "
                                     "ON UPDATE CASCADE)"
                         );
-            query->exec("CREATE GENERATOR gen_save_actions_id");
-            query->exec("SET GENERATOR gen_save_actions_id TO 0");
-            query->exec("CREATE TRIGGER tr_save_actions FOR save_actions ACTIVE BEFORE INSERT POSITION 0 AS BEGIN if (NEW.ID is NULL) then NEW.ID = GEN_ID(gen_save_actions_id, 1);END");
-            query->exec("GRANT ALL ON save_actions TO full_access");
         }
         query->exec("UPDATE version SET id = 2");
     }
     query->clear();
     query->exec("SELECT * FROM version");
     query->first();
-    if (query->value(0).toInt() < 3)
+    if (query->value(0).toInt() == 2)
     {
         query->clear();
         //Создаём таблицу сохранённых действий
         {
+            query->exec("CREATE SEQUENCE seq_update_date_id");
             query->exec("CREATE TABLE update_date ( "
                                     "id VARCHAR(20) NOT NULL, "
                                     "data DATE NOT NULL, "
                                     "PRIMARY KEY (id))"
                         );
-            query->exec("GRANT ALL ON update_date TO full_access");
+        }
+
+        {
+            query->exec("CREATE OR REPLACE FUNCTION action_ () "
+                        "RETURNS TABLE (id integer, client_name_ text, inn_ text, firm_name_ text, pp_type_ text, percent_ NUMERIC(18,2), client_id_ integer) "
+                        "AS $BODY$ "
+                        "DECLARE "
+                        "rec RECORD; "
+                        "BEGIN "
+                        "FOR rec IN SELECT sa.id, clients.name, sa.inn, sa.firm_name, pp_in_out.data, sa.percent, sa.client_id FROM save_actions AS sa "
+                        "LEFT JOIN clients ON clients.id = sa.client_id "
+                        "LEFT JOIN pp_in_out ON pp_in_out.id = sa.type_pp "
+                        "LOOP "
+                        "id = rec.id; "
+                        "client_name_ = rec.name; "
+                        "inn_ = rec.inn; "
+                        "firm_name_ = rec.firm_name; "
+                        "pp_type_ = rec.data; "
+                        "percent_ = rec.percent; "
+                        "client_id_ = rec.client_id; "
+                        "RETURN next; "
+                        "END LOOP; "
+                        "END; "
+                        "$BODY$ "
+                        "LANGUAGE 'plpgsql'");
+        }
+        query->exec("UPDATE version SET id = 3");
+    }
+
+    query->clear();
+    query->exec("SELECT * FROM version");
+    query->first();
+    if (query->value(0).toInt() == 3)
+    {
+        query->clear();
+        //Создаём справочник банков
+        {
+            query->exec("CREATE TABLE ref_banks ( "
+                                    "id INTEGER NOT NULL, "
+                                    "index TEXT NOT NULL, "         //5 IND:
+                                    "sity TEXT NOT NULL, "          //7 NNP:
+                                    "address TEXT NOT NULL, "       //8 ADR:
+                                    "name TEXT NOT NULL, "          //10 NAMEP:
+                                    "bik TEXT NOT NULL, "           //12 NEWNUM:
+                                    "phone TEXT NOT NULL, "         //18 TELEF:
+                                    "okpo TEXT NOT NULL, "          //20 OKPO:
+                                    "ks TEXT NOT NULL, "            //23 KSNP:
+                                    "PRIMARY KEY (id))"
+                        );
             {
                 query->exec("INSERT INTO update_date (id, data) "
                             "VALUES ('bik_update', '01.05.2014')");
             }
         }
-        query->exec("UPDATE version SET id = 3");
+        query->exec("UPDATE version SET id = 4");
     }
 
     this->hide();
@@ -487,27 +507,72 @@ void Widget::create_database()
 
 void Widget::slot_login()
 {
-    *db = QSqlDatabase::addDatabase("QIBASE");
-    db->setDatabaseName(QApplication::applicationDirPath()+"/database.fdb");
+    *db = QSqlDatabase::addDatabase("QPSQL");
+    query = new QSqlQuery(*db);
+    db->setDatabaseName("finance");
     db->setHostName("localhost");
     db->setUserName(ui->lineEdit_login->text());
     db->setPassword(ui->lineEdit_passwd->text());
-    if (ui->lineEdit_login->text() != "SYSDBA")
-        db->setConnectOptions("ISC_DPB_SQL_ROLE_NAME=FULL_ACCESS");
+    //if (ui->lineEdit_login->text() != "SYSDBA")
+    //    db->setConnectOptions("ISC_DPB_SQL_ROLE_NAME=FULL_ACCESS");
     if (!db->open())
     {
         QString error_db = db->lastError().text();
         QMessageBox::critical(this, "error", error_db);
         db->close();
-        return;
+        {
+            db->setDatabaseName("postgres");
+            db->setHostName("localhost");
+            db->setUserName(ui->lineEdit_login->text());
+            db->setPassword(ui->lineEdit_passwd->text());
+            if (!db->open())
+            {
+                error_db = db->lastError().text();
+                QMessageBox::critical(this, "error", error_db);
+                db->close();
+                return;
+            }
+            else
+            {
+                query->exec("CREATE DATABASE finance "
+                            "WITH OWNER = postgres "
+                            "ENCODING = 'UTF8' "
+                            "TABLESPACE = pg_default "
+                            "LC_COLLATE = 'ru_RU.UTF-8' "
+                            "LC_CTYPE = 'ru_RU.UTF-8' "
+                            "CONNECTION LIMIT = -1;");
+                if (query->lastError().text() == " ")
+                {
+                    db->close();
+                    db->setDatabaseName("finance");
+                    db->setHostName("localhost");
+                    db->setUserName(ui->lineEdit_login->text());
+                    db->setPassword(ui->lineEdit_passwd->text());
+                    if (!db->open())
+                    {
+                        error_db = db->lastError().text();
+                        QMessageBox::critical(this, "error", error_db);
+                        db->close();
+                        return;
+                    }
+                    hide();
+                    create_database();
+                    set_settings();
+                    return;
+                }
+                else
+                {
+                    error_db = query->lastError().text();
+                    QMessageBox::critical(this, "error", error_db);
+                    db->close();
+                    return;
+                }
+            }
+        }
     }
     else
     {
-        query = new QSqlQuery(*db);
         create_database();
-        query->exec(" SELECT current_role FROM rdb$database");
-        query->first();
-        //gen_window = new general_window(this, 0);
         hide();
         set_settings();
         //gen_window->show();

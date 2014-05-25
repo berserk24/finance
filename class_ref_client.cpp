@@ -169,7 +169,7 @@ void class_ref_client::slot_add_edit_client()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_obnal->text());
+            query->addBindValue(ui->lineEdit_perc_obnal->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_trans_in->text() == "")
         {
@@ -177,7 +177,7 @@ void class_ref_client::slot_add_edit_client()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_trans_in->text());
+            query->addBindValue(ui->lineEdit_perc_trans_in->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_trans_in_s->text() == "")
         {
@@ -185,7 +185,7 @@ void class_ref_client::slot_add_edit_client()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_trans_in_s->text());
+            query->addBindValue(ui->lineEdit_perc_trans_in_s->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_trans_out->text() == "")
         {
@@ -193,7 +193,7 @@ void class_ref_client::slot_add_edit_client()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_trans_out->text());
+            query->addBindValue(ui->lineEdit_perc_trans_out->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_dolg->text() == "")
         {
@@ -201,7 +201,7 @@ void class_ref_client::slot_add_edit_client()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_dolg->text());
+            query->addBindValue(ui->lineEdit_perc_dolg->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_nal->text() == "")
         {
@@ -209,11 +209,11 @@ void class_ref_client::slot_add_edit_client()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_nal->text());
+            query->addBindValue(ui->lineEdit_perc_nal->text().replace(",", "."));
         }
         if (query->exec()) status++;
         query->clear();
-        if (query->exec("SELECT gen_id(gen_clients_id, 0) FROM RDB$DATABASE")) status++;
+        if (query->exec("SELECT currval('seq_clients_id')")) status++;
         query->first();
         id = query->value(0).toInt();
         query->clear();
@@ -246,7 +246,7 @@ void class_ref_client::slot_add_edit_client()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_obnal->text());
+            query->addBindValue(ui->lineEdit_perc_obnal->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_trans_in->text() == "")
         {
@@ -254,7 +254,7 @@ void class_ref_client::slot_add_edit_client()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_trans_in->text());
+            query->addBindValue(ui->lineEdit_perc_trans_in->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_trans_in_s->text() == "")
         {
@@ -262,7 +262,7 @@ void class_ref_client::slot_add_edit_client()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_trans_in_s->text());
+            query->addBindValue(ui->lineEdit_perc_trans_in_s->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_trans_out->text() == "")
         {
@@ -270,7 +270,7 @@ void class_ref_client::slot_add_edit_client()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_trans_out->text());
+            query->addBindValue(ui->lineEdit_perc_trans_out->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_dolg->text() == "")
         {
@@ -278,7 +278,7 @@ void class_ref_client::slot_add_edit_client()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_dolg->text());
+            query->addBindValue(ui->lineEdit_perc_dolg->text().replace(",", "."));
         }
         if (ui->lineEdit_perc_nal->text() == "")
         {
@@ -286,7 +286,7 @@ void class_ref_client::slot_add_edit_client()
         }
         else
         {
-            query->addBindValue(ui->lineEdit_perc_nal->text());
+            query->addBindValue(ui->lineEdit_perc_nal->text().replace(",", "."));
         }
         query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
         query->exec();
@@ -349,7 +349,6 @@ void class_ref_client::slot_del_client()
             query->addBindValue(ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString());
             query->exec();
             query->clear();
-            return;
         }
     clear_field();
     select_table();

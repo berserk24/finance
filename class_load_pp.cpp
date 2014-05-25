@@ -381,6 +381,7 @@ void class_load_pp::load_pp(QString file)
 
     if (get_firm_id(inn) == "")
     {
+        qDebug() << "add firm" << endl;
         query->prepare("INSERT INTO firms (name, inn, stroy) "
                                 "VALUES (?, ?, 0)");
         query->addBindValue(firm_name);
@@ -411,7 +412,7 @@ void class_load_pp::load_pp(QString file)
                 query->addBindValue(start_balans);
                 if (query->exec()) status++;
                 query->clear();
-                if (query->exec("SELECT gen_id(gen_rss_id, 0) FROM RDB$DATABASE")) status++;
+                if (query->exec("SELECT currval('seq_rss_id')")) status++;
                 query->first();
                 id = query->value(0).toInt();
                 query->clear();
@@ -429,6 +430,7 @@ void class_load_pp::load_pp(QString file)
                 {
                     db->rollback();
                 }
+                qDebug() << "start end rss" << endl;
                 break;
            case QMessageBox::Cancel:
                return;
@@ -570,7 +572,6 @@ void class_load_pp::load_pp(QString file)
                 //qDebug() << summ_out << summ_in << delta.replace(",", ".").toDouble() << i << endl;
             }
 
-
             if (status == 2)
             {
                 db->commit();
@@ -581,7 +582,7 @@ void class_load_pp::load_pp(QString file)
             }
 
             QString pp_id;
-            if (query->exec("SELECT gen_id(gen_pp_id, 0) FROM RDB$DATABASE")) status++;
+            if (query->exec("SELECT currval('seq_pp_id')")) status++;
             query->first();
             pp_id = query->value(0).toString();
             query->clear();
@@ -596,14 +597,14 @@ void class_load_pp::load_pp(QString file)
                                         vector_pp->at(i).sum,
                                         pp_id,
                                         vector_pp->at(i).dest_pay,
-                                        "",
+                                        "-1",
                                         ""
                             );
                     }
             }
 
             {
-                query->prepare("SELECT * FROM action_ WHERE inn_ = ?");
+                query->prepare("SELECT * FROM action_() WHERE inn_ = ?");
                 if (vector_pp->at(i).type == "2")
                 {
                     query->addBindValue(vector_pp->at(i).payer_inn);
@@ -627,8 +628,8 @@ void class_load_pp::load_pp(QString file)
         }
         else
         {
-            qDebug() << query->lastError().text() << endl;
-            if (query->lastError().text().mid(0, 45) == "violation of PRIMARY or UNIQUE KEY constraint")
+            //qDebug() << query->lastError().text() << endl;
+            if (query->lastError().text().mid(0, 31) == "ОШИБКА:  повторяющееся значение")
             {
                 QString str;
                 query->clear();
@@ -794,6 +795,7 @@ QString class_load_pp::get_id_rs(QString rs, QString bik)
     query1->exec();
     query1->first();
     QString str = query1->value(0).toString();
+    //qDebug() << rs << bik << str << endl;
     query1->clear();
     delete query1;
     return str;
