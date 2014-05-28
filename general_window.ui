@@ -70,6 +70,7 @@
     <property name="title">
      <string>Операции</string>
     </property>
+    <addaction name="action_create_new_pp"/>
     <addaction name="action_load_pp"/>
     <addaction name="action_pp"/>
     <addaction name="action_balans_rs"/>
@@ -256,6 +257,11 @@
   <action name="action_update_ref_banks">
    <property name="text">
     <string>Обновление справочника банков</string>
+   </property>
+  </action>
+  <action name="action_create_new_pp">
+   <property name="text">
+    <string>Создать платёжное поручение</string>
    </property>
   </action>
  </widget>

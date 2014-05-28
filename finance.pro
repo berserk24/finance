@@ -88,7 +88,8 @@ FORMS    += widget.ui \
     class_settings.ui \
     class_report_load_pp.ui \
     class_ref_auto_actions.ui \
-    class_update_ref_banks.ui
+    class_update_ref_banks.ui \
+    class_create_pp.ui
 
 RESOURCES += \
     language.qrc

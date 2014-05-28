@@ -23,6 +23,7 @@
 #include "class_settings.h"
 #include "class_ref_auto_actions.h"
 #include "class_update_ref_banks.h"
+#include "class_create_pp.h"
 
 namespace Ui {
 class general_window;
@@ -57,9 +58,10 @@ private:
     QSqlDatabase *db;
     int i_rs, i_firm, i_client, i_tarif, i_load_pp, i_pp, user_id,
     i_balans_client, i_balans_rs, i_client_pay, i_client_group, i_manage_users,
-    i_balans_group, i_report_client, i_auto_actions;
+    i_balans_group, i_report_client, i_auto_actions, i_new_pp;
     class_settings *settings;
     class_update_ref_banks *update_banks;
+    class_create_pp *new_pp;
 
 public slots:
     void show_rss_form();
@@ -80,6 +82,7 @@ public slots:
     void slot_set_status_bar_data(QString);
     void slot_show_settings_window();
     void slot_show_update_ref_banks();
+    void slot_show_create_new_pp();
     void get_access();
 
 };

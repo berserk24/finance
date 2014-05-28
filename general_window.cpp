@@ -15,7 +15,7 @@ general_window::general_window(QWidget *parent, QSqlDatabase *db1) :
     //slot_set_enable_menu(user_id);
 
     i_rs = i_firm = i_client = i_tarif = i_load_pp = i_pp = i_balans_client =
-            i_balans_rs = i_client_pay = i_manage_users = i_report_client = i_auto_actions = -1;
+            i_balans_rs = i_client_pay = i_manage_users = i_report_client = i_auto_actions = i_new_pp = -1;
 
     statusBar()->addWidget(&lb);
 
@@ -71,6 +71,9 @@ general_window::general_window(QWidget *parent, QSqlDatabase *db1) :
 
     //Обновляем справочник банков
     connect(ui->action_update_ref_banks, SIGNAL(triggered()), SLOT(slot_show_update_ref_banks()));
+
+    //Показываем окно создания платёжки
+    connect(ui->action_create_new_pp, SIGNAL(triggered()), SLOT(slot_show_create_new_pp()));
 }
 
 void general_window::slot_show_update_ref_banks()
@@ -177,7 +180,23 @@ void general_window::slot_del_tab(int index)
     if (ui->tabWidget->tabText(index) == "Управление пользователями") i_manage_users = -1;
     if (ui->tabWidget->tabText(index) == "Отчёт по контрагенту") i_report_client = -1;
     if (ui->tabWidget->tabText(index) == "Автоматические действия") i_auto_actions = -1;
+    if (ui->tabWidget->tabText(index) == "Новое платёжное поручение") i_new_pp = -1;
     ui->tabWidget->removeTab(index);
+}
+
+//Открываем окно создания новой платёжки
+void general_window::slot_show_create_new_pp()
+{
+    if (i_new_pp == -1)
+    {
+        new_pp = new class_create_pp;
+        i_new_pp = ui->tabWidget->addTab(new_pp, QString("Новое платёжное поручение"));
+        ui->tabWidget->setCurrentIndex(i_new_pp);
+    }
+    else
+    {
+        ui->tabWidget->setCurrentIndex(ui->tabWidget->indexOf(new_pp));
+    }
 }
 
 void general_window::show_rss_form()

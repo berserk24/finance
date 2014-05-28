@@ -3,6 +3,10 @@
 
 #include <QWidget>
 
+namespace Ui {
+class class_create_pp;
+}
+
 class class_create_pp : public QWidget
 {
     Q_OBJECT
@@ -12,6 +16,14 @@ public:
 signals:
 
 public slots:
+    void slot_show_info(bool state);
+    void slot_show_payer(bool state);
+    void slot_show_receiver(bool state);
+    void slot_show_dest_pay(bool state);
+    void slot_show_budget(bool state);
+
+private:
+    Ui::class_create_pp *ui;
 
 };
 
