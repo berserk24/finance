@@ -482,14 +482,14 @@ void Widget::create_database()
         {
             query->exec("CREATE TABLE ref_banks ( "
                                     "id INTEGER NOT NULL, "
-                                    "index TEXT NOT NULL, "         //5 IND:
-                                    "sity TEXT NOT NULL, "          //7 NNP:
-                                    "address TEXT NOT NULL, "       //8 ADR:
-                                    "name TEXT NOT NULL, "          //10 NAMEP:
-                                    "bik TEXT NOT NULL, "           //12 NEWNUM:
-                                    "phone TEXT NOT NULL, "         //18 TELEF:
-                                    "okpo TEXT NOT NULL, "          //20 OKPO:
-                                    "ks TEXT NOT NULL, "            //23 KSNP:
+                                    "index VARCHAR(6) NOT NULL, "         //5 IND:
+                                    "sity VARCHAR(20) NOT NULL, "          //7 NNP:
+                                    "address VARCHAR(100) NOT NULL, "       //8 ADR:
+                                    "name VARCHAR(100) NOT NULL, "          //10 NAMEP:
+                                    "bik VARCHAR(9) NOT NULL, "           //12 NEWNUM:
+                                    "phone VARCHAR(100), "         //18 TELEF:
+                                    "okpo VARCHAR(8), "          //20 OKPO:
+                                    "ks VARCHAR(20) NOT NULL, "            //23 KSNP:
                                     "PRIMARY KEY (id))"
                         );
             {
@@ -498,6 +498,27 @@ void Widget::create_database()
             }
         }
         query->exec("UPDATE version SET id = 4");
+    }
+
+    query->clear();
+    query->exec("SELECT * FROM version");
+    query->first();
+    if (query->value(0).toInt() < 5)
+    {
+        query->clear();
+        //Создаём счётчики платёжек
+        {
+            query->exec("CREATE TABLE count_pp ( "
+                                    "id INTEGER NOT NULL, "
+                                    "date_count DATE NOT NULL, "
+                                    "count_pp INTEGER NOT NULL, "
+                                    "PRIMARY KEY (id), "
+                                    "FOREIGN KEY (id) REFERENCES rss(id) "
+                                    "ON DELETE CASCADE "
+                                    "ON UPDATE CASCADE)"
+                        );
+        }
+        query->exec("UPDATE version SET id = 5");
     }
 
     this->hide();

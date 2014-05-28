@@ -422,7 +422,13 @@ void class_load_pp::load_pp(QString file)
                 query->addBindValue(QDate::currentDate());
                 if (query->exec()) status++;
                 query->clear();
-                if (status == 3)
+                query->prepare("INSERT INTO count_pp (id, date_count, count_pp) "
+                               "VALUES (?, ?, 1)");
+                query->addBindValue(id);
+                query->addBindValue(QDate::currentDate());
+                if (query->exec()) status++;
+                query->clear();
+                if (status == 4)
                 {
                     db->commit();
                 }

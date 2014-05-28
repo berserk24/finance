@@ -93,7 +93,6 @@ void class_rss_form::slot_add_rs()
             query->addBindValue("0");
         }
         if (query->exec()) status++;
-        qDebug() << query->lastError().text() << endl;
         query->clear();
         if (query->exec("SELECT currval('seq_rss_id');")) status++;
         query->first();
@@ -105,7 +104,13 @@ void class_rss_form::slot_add_rs()
         query->addBindValue(QDate::currentDate());
         if (query->exec()) status++;
         query->clear();
-        if (status == 3)
+        query->prepare("INSERT INTO count_pp (id, date_count, count_pp) "
+                       "VALUES (?, ?, 1)");
+        query->addBindValue(id);
+        query->addBindValue(QDate::currentDate());
+        if (query->exec()) status++;
+        query->clear();
+        if (status == 4)
         {
             db->commit();
         }
@@ -116,7 +121,7 @@ void class_rss_form::slot_add_rs()
     }
     if (ui->pushButton_add_edit->text() == "Изменить")
     {
-        query->prepare("UPDATE rss SET name=?, bik=?, number=?, firm=?, start_balans=?"
+        query->prepare("UPDATE rss SET name=?, bik=?, number=?, firm=?, start_balans=? "
                             "WHERE id=?");
         query->addBindValue(ui->lineEdit_name->text());
         query->addBindValue(ui->lineEdit_bik->text());
