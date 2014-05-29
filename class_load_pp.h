@@ -44,7 +44,7 @@ private:
     QFile *file_pp;
     QString *file_str;
     QList<QString> codepage;
-    QString date_start, date_end, rs, start_balans, all_in, all_out, end_balans, bik, inn, firm_name;
+    QString date_start, date_end, rs, start_balans, all_in, all_out, end_balans, bik, inn, firm_name, kpp;
     int pp_count, date_balans;
     QSqlQuery *query;
     class_pp *pp;
@@ -63,7 +63,7 @@ private:
     QString get_bik(QTextStream *);
     QString get_id_rs(QString rs, QString bik);
     QString get_rs_id(QString id);
-    QString get_firm_id(QString inn);
+    QString get_firm_id(QString inn, QString kpp);
     bool verify_pp(QString);
     void load_pp(QString);
     void clear_window();

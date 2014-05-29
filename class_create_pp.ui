@@ -28,7 +28,7 @@
      <widget class="QWidget" name="scrollAreaWidgetContents">
       <property name="geometry">
        <rect>
-        <x>-119</x>
+        <x>0</x>
         <y>0</y>
         <width>769</width>
         <height>305</height>
@@ -450,10 +450,24 @@
                <widget class="QLineEdit" name="lineEdit_receiver"/>
               </item>
               <item>
-               <widget class="QLineEdit" name="lineEdit_receiver_bik"/>
+               <widget class="QComboBox" name="comboBox_receiver_bik">
+                <property name="editable">
+                 <bool>true</bool>
+                </property>
+                <property name="insertPolicy">
+                 <enum>QComboBox::NoInsert</enum>
+                </property>
+               </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="lineEdit_receiver_bank"/>
+               <widget class="QComboBox" name="comboBox_receiver_bank">
+                <property name="editable">
+                 <bool>true</bool>
+                </property>
+                <property name="insertPolicy">
+                 <enum>QComboBox::NoInsert</enum>
+                </property>
+               </widget>
               </item>
               <item>
                <widget class="QLineEdit" name="lineEdit_receiver_bank2"/>

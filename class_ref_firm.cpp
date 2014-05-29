@@ -13,6 +13,8 @@ class_ref_firm::class_ref_firm(QWidget *parent) :
 
     QValidator *validator = new QRegExpValidator(QRegExp("[1-9]\\d{11}"), this);
     ui->lineEdit_inn->setValidator(validator);
+    validator = new QRegExpValidator(QRegExp("[1-9]\\d{8}"), this);
+    ui->lineEdit_kpp->setValidator(validator);
 
     model = new QSqlQueryModel;
     refresh_tableview();
@@ -20,6 +22,7 @@ class_ref_firm::class_ref_firm(QWidget *parent) :
     //Включаем кнопку добавить/изменить
     connect(ui->lineEdit_name, SIGNAL(textChanged(QString)), SLOT(slot_enable_add()));
     connect(ui->lineEdit_inn, SIGNAL(textChanged(QString)), SLOT(slot_enable_add()));
+    connect(ui->lineEdit_kpp, SIGNAL(textChanged(QString)), SLOT(slot_enable_add()));
 
     //Добавляем фирму
     connect(ui->pushButton_add_firm, SIGNAL(clicked()), SLOT(slot_add_firm()));
@@ -39,9 +42,9 @@ class_ref_firm::class_ref_firm(QWidget *parent) :
 //Включаем кнопку добавить/изменить
 void class_ref_firm::slot_enable_add()
 {
-    if (ui->tableView->selectionModel()->selectedIndexes().size() < 5)
+    if (ui->tableView->selectionModel()->selectedIndexes().size() < 6)
     {
-        if (ui->lineEdit_name->text() != "" and (ui->lineEdit_inn->text().length() == 12 or ui->lineEdit_inn->text().length() == 10))
+        if (ui->lineEdit_name->text() != "" and (ui->lineEdit_inn->text().length() == 12 or ui->lineEdit_inn->text().length() == 10) and ui->lineEdit_kpp->text().length() == 9)
         {
             ui->pushButton_add_firm->setEnabled(true);
         }
@@ -61,9 +64,10 @@ void class_ref_firm::slot_add_firm()
 {
     if (ui->tableView->selectionModel()->hasSelection())
     {
-        query->prepare("UPDATE firms SET name = ?, inn = ?, stroy = ? WHERE id = ?");
+        query->prepare("UPDATE firms SET name = ?, inn = ?, kpp = ?, stroy = ? WHERE id = ?");
         query->addBindValue(ui->lineEdit_name->text());
         query->addBindValue(ui->lineEdit_inn->text());
+        query->addBindValue(ui->lineEdit_kpp->text());
         if (ui->checkBox_stroy->isChecked())
         {
             query->addBindValue(1);
@@ -76,10 +80,11 @@ void class_ref_firm::slot_add_firm()
     }
     else
     {
-        query->prepare("INSERT INTO firms (name, inn, stroy)"
-                            "VALUES (?, ?, ?)");
+        query->prepare("INSERT INTO firms (name, inn, kpp, stroy)"
+                            "VALUES (?, ?, ?, ?)");
         query->addBindValue(ui->lineEdit_name->text());
         query->addBindValue(ui->lineEdit_inn->text());
+        query->addBindValue(ui->lineEdit_kpp->text());
         if (ui->checkBox_stroy->isChecked())
         {
             query->addBindValue(1);
@@ -93,6 +98,7 @@ void class_ref_firm::slot_add_firm()
     query->clear();
     ui->lineEdit_name->setText("");
     ui->lineEdit_inn->setText("");
+    ui->lineEdit_kpp->setText("");
     ui->checkBox_stroy->setChecked(false);
     ui->pushButton_del_firm->setEnabled(false);
     refresh_tableview();
@@ -102,14 +108,15 @@ void class_ref_firm::slot_add_firm()
 //Включаем выключаем кнопку удалить
 void class_ref_firm::slot_enable_del()
 {
-    if (ui->tableView->selectionModel()->selectedIndexes().size() < 5)
+    if (ui->tableView->selectionModel()->selectedIndexes().size() < 6)
     {
         ui->pushButton_del_firm->setEnabled(ui->tableView->selectionModel()->hasSelection());
         if (ui->tableView->selectionModel()->hasSelection())
         {
             ui->lineEdit_name->setText(ui->tableView->selectionModel()->selectedIndexes().at(1).data().toString());
             ui->lineEdit_inn->setText(ui->tableView->selectionModel()->selectedIndexes().at(2).data().toString());
-            if (ui->tableView->selectionModel()->selectedIndexes().at(3).data().toString() == "Да")
+            ui->lineEdit_kpp->setText(ui->tableView->selectionModel()->selectedIndexes().at(3).data().toString());
+            if (ui->tableView->selectionModel()->selectedIndexes().at(4).data().toString() == "Да")
             {
                 ui->checkBox_stroy->setChecked(true);
             }
@@ -122,9 +129,10 @@ void class_ref_firm::slot_enable_del()
         {
             ui->lineEdit_name->setText("");
             ui->lineEdit_inn->setText("");
+            ui->lineEdit_kpp->setText("");
             ui->checkBox_stroy->setChecked(false);
         }
-        if (ui->lineEdit_name->text() != "" and (ui->lineEdit_inn->text().length() == 12 or ui->lineEdit_inn->text().length() == 10) and ui->tableView->selectionModel()->hasSelection())
+        if (ui->lineEdit_name->text() != "" and ui->lineEdit_kpp->text().length() == 9 and (ui->lineEdit_inn->text().length() == 12 or ui->lineEdit_inn->text().length() == 10) and ui->tableView->selectionModel()->hasSelection())
         {
             ui->pushButton_add_firm->setEnabled(true);
         }
@@ -145,6 +153,7 @@ void class_ref_firm::slot_enable_del()
     {
         ui->lineEdit_name->setText("");
         ui->lineEdit_inn->setText("");
+        ui->lineEdit_kpp->setText("");
         ui->checkBox_stroy->setChecked(false);
         ui->pushButton_add_firm->setEnabled(false);
         ui->pushButton_del_firm->setEnabled(false);
@@ -161,13 +170,14 @@ void class_ref_firm::slot_sort_pp(int sort_id)
 //Обновляем форму
 void class_ref_firm::refresh_tableview()
 {
-    query_str = "SELECT firms.id, firms.name, firms.inn, yn.data FROM firms "
+    query_str = "SELECT firms.id, firms.name, firms.inn, firms.kpp, yn.data FROM firms "
                 "LEFT JOIN yes_no yn ON yn.id = firms.stroy "
                 "WHERE firms.id > 0 ";
     if (id_column == 0) query_str += "ORDER BY firms.name ";
     if (id_column == 1) query_str += "ORDER BY firms.name ";
     if (id_column == 2) query_str += "ORDER BY firms.inn ";
-    if (id_column == 3) query_str += "ORDER BY yn.data ";
+    if (id_column == 3) query_str += "ORDER BY firms.kpp ";
+    if (id_column == 4) query_str += "ORDER BY yn.data ";
     if (ui->tableView->horizontalHeader()->sortIndicatorOrder())
     {
         query_str += " DESC";
@@ -179,13 +189,15 @@ void class_ref_firm::refresh_tableview()
     model->setQuery(query_str);
     model->setHeaderData(1,Qt::Horizontal, "Название");
     model->setHeaderData(2,Qt::Horizontal, "ИНН");
-    model->setHeaderData(3,Qt::Horizontal, "Строй");
+    model->setHeaderData(3,Qt::Horizontal, "КПП");
+    model->setHeaderData(4,Qt::Horizontal, "Строй");
     ui->tableView->setModel(model);
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableView->setColumnHidden(0,true);
     ui->tableView->setColumnWidth(1, 200);
     ui->tableView->setColumnWidth(2, 150);
     ui->tableView->setColumnWidth(3, 100);
+    ui->tableView->setColumnWidth(4, 100);
 }
 
 //Удаляем фирму

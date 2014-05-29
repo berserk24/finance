@@ -30,6 +30,10 @@ public slots:
     void slot_get_count_pp();
     void slot_load_rss();
     void slot_set_date();
+    void slot_load_firm();
+    void slot_load_bik();
+    void slot_select_receiver_bank();
+    void slot_select_receiver_bank_city(int id);
 
 private:
     Ui::class_create_pp *ui;

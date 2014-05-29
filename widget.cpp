@@ -132,8 +132,10 @@ void Widget::create_database()
             query->exec("CREATE TABLE firms ( "
                                     "id INTEGER NOT NULL DEFAULT nextval('seq_firms_id'), "
                                     "name VARCHAR(70) UNIQUE, "
-                                    "inn VARCHAR(12) UNIQUE, "
+                                    "inn VARCHAR(12), "
+                                    "kpp VARCHAR(9), "
                                     "stroy SMALLINT NOT NULL, "
+                                    "UNIQUE (inn, kpp), "
                                     "PRIMARY KEY (id));"
                         );
         }

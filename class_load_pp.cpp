@@ -96,7 +96,7 @@ bool class_load_pp::verify_pp(QString file)
 {
     //qDebug() << file << endl;
     int i = 0;
-    date_start = date_end = rs = start_balans = all_in = all_out = end_balans = inn = firm_name = "";
+    date_start = date_end = rs = start_balans = all_in = all_out = end_balans = inn = kpp = firm_name = "";
 
     vector_pp = new QVector<class_pp>;
 
@@ -260,6 +260,10 @@ bool class_load_pp::verify_pp(QString file)
                 {
                     inn = pp->payer_inn;
                 }
+                if (kpp == "" and pp->payer_kpp.length() == 9)
+                {
+                    kpp = pp->payer_kpp;
+                }
                 if (firm_name == "")
                 {
                     if (pp->payer1 == "" or pp->payer1.isNull() or pp->payer1.isEmpty())
@@ -280,6 +284,10 @@ bool class_load_pp::verify_pp(QString file)
                 if (inn == "")
                 {
                     inn = pp->receiver_inn;
+                }
+                if (kpp == "" and pp->receiver_kpp.length() == 9)
+                {
+                    kpp = pp->receiver_kpp;
                 }
                 if (firm_name == "")
                 {
@@ -379,20 +387,21 @@ void class_load_pp::load_pp(QString file)
     QString delta;
     int status = 0,id = 0;
 
-    if (get_firm_id(inn) == "")
+    if (get_firm_id(inn, kpp) == "")
     {
         qDebug() << "add firm" << endl;
-        query->prepare("INSERT INTO firms (name, inn, stroy) "
-                                "VALUES (?, ?, 0)");
+        query->prepare("INSERT INTO firms (name, inn, kpp, stroy) "
+                                "VALUES (?, ?, ?, 0)");
         query->addBindValue(firm_name);
         query->addBindValue(inn);
+        query->addBindValue(kpp);
         query->exec();
         query->clear();
     }
 
     if (get_id_rs(rs, bik) == "")
     {
-        QString firm_id = get_firm_id(inn);
+        QString firm_id = get_firm_id(inn, kpp);
         int ret = QMessageBox::warning(this, tr("Внимание"),
                                         tr("Не существует такого расчётного счёта:\n" + rs.toUtf8() + "\nСоздать?"),
                                         QMessageBox::Yes
@@ -780,10 +789,11 @@ void class_load_pp::slot_load_pp_db()
 }
 
 //Получаем id фирмы по ИНН
-QString class_load_pp::get_firm_id(QString inn)
+QString class_load_pp::get_firm_id(QString inn, QString kpp)
 {
-    query->prepare("SELECT id FROM firms WHERE inn = ?");
+    query->prepare("SELECT id FROM firms WHERE inn = ? and kpp = ?");
     query->addBindValue(inn);
+    query->addBindValue(kpp);
     query->exec();
     query->first();
     QString f_id = query->value(0).toString();
