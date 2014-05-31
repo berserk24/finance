@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1032</width>
+    <width>1076</width>
     <height>300</height>
    </rect>
   </property>
@@ -333,6 +333,46 @@
          <item>
           <property name="text">
            <string>Все</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_9">
+       <item>
+        <widget class="QLabel" name="label_10">
+         <property name="text">
+          <string>Статус</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBox_status">
+         <item>
+          <property name="text">
+           <string>Все</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Новый</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Отправлен</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Принят</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Отозван</string>
           </property>
          </item>
         </widget>

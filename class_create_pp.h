@@ -34,6 +34,10 @@ public slots:
     void slot_load_bik();
     void slot_select_receiver_bank();
     void slot_select_receiver_bank_city(int id);
+    void slot_set_regexp();
+    void slot_load_auto_rekv();
+    void slot_set_enable_add();
+    void slot_create_pp();
 
 private:
     Ui::class_create_pp *ui;

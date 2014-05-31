@@ -127,6 +127,9 @@
                     <property name="editable">
                      <bool>true</bool>
                     </property>
+                    <property name="maxVisibleItems">
+                     <number>10</number>
+                    </property>
                     <item>
                      <property name="text">
                       <string>5</string>
@@ -191,7 +194,11 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_12">
                   <item>
-                   <widget class="QLineEdit" name="lineEdit_sum"/>
+                   <widget class="QLineEdit" name="lineEdit_sum">
+                    <property name="maxLength">
+                     <number>15</number>
+                    </property>
+                   </widget>
                   </item>
                   <item>
                    <spacer name="horizontalSpacer_10">
@@ -214,6 +221,9 @@
                    <widget class="QComboBox" name="comboBox_type_pp">
                     <property name="editable">
                      <bool>true</bool>
+                    </property>
+                    <property name="maxVisibleItems">
+                     <number>10</number>
                     </property>
                     <item>
                      <property name="text">
@@ -316,7 +326,11 @@
                <widget class="QLineEdit" name="lineEdit_payer_bank"/>
               </item>
               <item>
-               <widget class="QLineEdit" name="lineEdit_payer_bik"/>
+               <widget class="QLineEdit" name="lineEdit_payer_bik">
+                <property name="maxLength">
+                 <number>9</number>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>
@@ -522,10 +536,18 @@
             <item>
              <layout class="QVBoxLayout" name="verticalLayout_9">
               <item>
-               <widget class="QLineEdit" name="lineEdit_receiver_inn"/>
+               <widget class="QLineEdit" name="lineEdit_receiver_inn">
+                <property name="maxLength">
+                 <number>12</number>
+                </property>
+               </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="lineEdit_11"/>
+               <widget class="QLineEdit" name="lineEdit_receiver_kpp">
+                <property name="maxLength">
+                 <number>9</number>
+                </property>
+               </widget>
               </item>
               <item>
                <widget class="QLineEdit" name="lineEdit_receiver_rs"/>
@@ -561,7 +583,7 @@
           <item row="0" column="0">
            <layout class="QVBoxLayout" name="verticalLayout_10">
             <item>
-             <widget class="QPlainTextEdit" name="plainTextEdit_dest_pay"/>
+             <widget class="QLineEdit" name="lineEdit_dest_pay"/>
             </item>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -576,7 +598,7 @@
                <widget class="QComboBox" name="comboBox_nds">
                 <item>
                  <property name="text">
-                  <string/>
+                  <string>НДС не облагается</string>
                  </property>
                 </item>
                 <item>

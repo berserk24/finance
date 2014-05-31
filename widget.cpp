@@ -523,6 +523,33 @@ void Widget::create_database()
         query->exec("UPDATE version SET id = 5");
     }
 
+    query->clear();
+    query->exec("SELECT * FROM version");
+    query->first();
+    if (query->value(0).toInt() < 6)
+    {
+        query->clear();
+        //Создаём статусы платёжек
+        {
+            query->exec("CREATE TABLE status_pp ( "
+                                    "id INTEGER NOT NULL, "
+                                    "data VARCHAR(9) NOT NULL, "
+                                    "PRIMARY KEY (id))"
+                        );
+        }
+        {
+            query->exec("INSERT INTO status_pp (id, data) "
+                        "VALUES (0, 'Новый')");
+            query->exec("INSERT INTO status_pp (id, data) "
+                        "VALUES (1, 'Отправлен')");
+            query->exec("INSERT INTO status_pp (id, data) "
+                        "VALUES (2, 'Принят')");
+            query->exec("INSERT INTO status_pp (id, data) "
+                        "VALUES (3, 'Отозван')");
+        }
+        query->exec("UPDATE version SET id = 6");
+    }
+
     this->hide();
     gen_window = new general_window(0, db);
     gen_window->show();

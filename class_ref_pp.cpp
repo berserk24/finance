@@ -43,6 +43,7 @@ class_ref_pp::class_ref_pp(QWidget *parent, QSqlDatabase *db1) :
     connect(ui->comboBox_type_doc, SIGNAL(currentIndexChanged(int)), SLOT(slot_select_pp()));
     connect(ui->lineEdit_firm, SIGNAL(textChanged(QString)), SLOT(slot_select_pp()));
     connect(ui->comboBox_client_filter, SIGNAL(activated(int)), SLOT(slot_select_pp()));
+    connect(ui->comboBox_status, SIGNAL(currentIndexChanged(int)), SLOT(slot_select_pp()));
 
     //Включаем выключаем кнопки
     connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(slot_enable_button()));
@@ -93,6 +94,7 @@ void class_ref_pp::slot_write_settings_view()
     {
         settings_table->slot_set_checkbox(model->headerData(i+1, Qt::Horizontal).toString(), str_to_bool(str.mid(i,1)));
     }
+    settings_table->slot_set_checkbox(model->headerData(16, Qt::Horizontal).toString(), str_to_bool(str.mid(10,1)));
 }
 
 //Преобразовываем строку в bool
@@ -182,7 +184,7 @@ void class_ref_pp::load_rss()
 QString class_ref_pp::get_settings()
 {
     settings->beginGroup("table_view");
-    QString str = settings->value("pp_table", "1111111111").toString();
+    QString str = settings->value("pp_table", "11111111111").toString();
     settings->endGroup();
     return str;
 }
@@ -190,7 +192,7 @@ QString class_ref_pp::get_settings()
 //Показываем платёжки
 void class_ref_pp::slot_select_pp()
 {
-    QString query_str = "SELECT pp.id, pp.date_oper, CAST(pp.sum_pp AS VARCHAR(18)), pp_in_out.data, COALESCE(pf.name, pp.payer1 , pp.payer) AS payerr, COALESCE(rf.name, pp.receiver1, pp.receiver) AS receiverr, clients.name, pp.dest_pay, pp.num, pp_type.data, rss.name, clients.id, firms.stroy, pp.payer_inn, pp.receiver_inn, pp.rs_id "
+    QString query_str = "SELECT pp.id, pp.date_oper, CAST(pp.sum_pp AS VARCHAR(18)), pp_in_out.data, COALESCE(pf.name, pp.payer1 , pp.payer) AS payerr, COALESCE(rf.name, pp.receiver1, pp.receiver) AS receiverr, clients.name, pp.dest_pay, pp.num, pp_type.data, rss.name, clients.id, firms.stroy, pp.payer_inn, pp.receiver_inn, pp.rs_id, status_pp.data "
             "FROM pp "
             "LEFT JOIN rss ON pp.rs_id = rss.id "
             "LEFT JOIN pp_in_out ON pp.type_pp = pp_in_out.id "
@@ -200,6 +202,7 @@ void class_ref_pp::slot_select_pp()
             "LEFT JOIN firms pf ON pf.inn = pp.payer_inn "
             "LEFT JOIN firms rf ON rf.inn = pp.receiver_inn "
             "LEFT JOIN firms ON firms.id = rss.firm "
+            "LEFT JOIN status_pp ON status_pp.id = pp.status_pp "
             "WHERE pp.date_oper >= '" + ui->dateEdit_date_s->date().toString("dd.MM.yyyy")
             + "' AND pp.date_oper <= '" + ui->dateEdit_date_po->date().toString("dd.MM.yyyy") + "'";
     switch (ui->comboBox_type_doc->currentIndex())
@@ -230,6 +233,7 @@ void class_ref_pp::slot_select_pp()
 
     if (ui->comboBox_type->currentIndex() > 0) query_str = query_str + " and pp.type_pp = " + QString::number(ui->comboBox_type->currentIndex());
     if (ui->comboBox_rs->currentIndex() > 0) query_str = query_str + " and pp.rs_id = " + ui->comboBox_rs->itemData(ui->comboBox_rs->currentIndex()).toString();
+    if (ui->comboBox_status->currentIndex() > 0) query_str = query_str + " and status_pp.data = '" + ui->comboBox_status->currentText() + "'";
     if (id_column == 0) query_str += " ORDER BY pp.date_oper";
     if (id_column == 1) query_str += " ORDER BY pp.date_oper";
     if (id_column == 2) query_str += " ORDER BY pp.sum_pp";
@@ -241,6 +245,7 @@ void class_ref_pp::slot_select_pp()
     if (id_column == 8) query_str += " ORDER BY pp.num";
     if (id_column == 9) query_str += " ORDER BY pp.type_doc";
     if (id_column == 10) query_str += " ORDER BY rss.name";
+    if (id_column == 16) query_str += " ORDER BY status_pp.data";
     if (ui->tableView->horizontalHeader()->sortIndicatorOrder())
     {
         query_str += " DESC";
@@ -266,6 +271,7 @@ void class_ref_pp::slot_select_pp()
     ui->tableView->setColumnHidden(8, !str_to_bool(str.mid(7,1)));
     ui->tableView->setColumnHidden(9, !str_to_bool(str.mid(8,1)));
     ui->tableView->setColumnHidden(10, !str_to_bool(str.mid(9,1)));
+    ui->tableView->setColumnHidden(16, !str_to_bool(str.mid(10,1)));
     model->setHeaderData(1,Qt::Horizontal, "Дата\nдокумента");
     model->setHeaderData(2,Qt::Horizontal, "Сумма");
     model->setHeaderData(3,Qt::Horizontal, "Движение");
@@ -281,6 +287,7 @@ void class_ref_pp::slot_select_pp()
     ui->tableView->setColumnHidden(13, true);
     ui->tableView->setColumnHidden(14, true);
     ui->tableView->setColumnHidden(15, true);
+    model->setHeaderData(16,Qt::Horizontal, "Статус");
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableView->setColumnWidth(1, 100);
     ui->tableView->setColumnWidth(2, 100);
@@ -292,6 +299,7 @@ void class_ref_pp::slot_select_pp()
     ui->tableView->setColumnWidth(8, 100);
     ui->tableView->setColumnWidth(9, 120);
     ui->tableView->setColumnWidth(10, 250);
+    ui->tableView->setColumnWidth(16, 100);
     show();
     ui->tableView->resizeRowsToContents();
     ui->tableView->setAlternatingRowColors(true);
@@ -301,7 +309,7 @@ void class_ref_pp::slot_select_pp()
 void class_ref_pp::slot_enable_button()
 {
     //qDebug() << ui->tableView->selectionModel()->selectedRows() << endl;
-    if (ui->tableView->selectionModel()->selectedIndexes().size() == 16)
+    if (ui->tableView->selectionModel()->selectedIndexes().size() == 17)
     {
         if (ui->tableView->selectionModel()->hasSelection())
         {
@@ -340,7 +348,7 @@ void class_ref_pp::slot_enable_button()
             ui->checkBox_save_action->setChecked(false);
         }
     }
-    else if (ui->tableView->selectionModel()->selectedIndexes().size() > 16)
+    else if (ui->tableView->selectionModel()->selectedIndexes().size() > 17)
     {
         ui->pushButton_del->setEnabled(true);
         ui->pushButton_to_client->setEnabled(true);
@@ -627,18 +635,25 @@ void class_ref_pp::slot_cancel_pp()
 
             int status = 0;
             db->transaction();
-            if (ui->tableView->selectionModel()->selectedRows(3).at(i).data().toString() == "Приход")
+            if (ui->tableView->selectionModel()->selectedRows(16).at(i).data().toString() == "Принят")
             {
-                query->prepare("UPDATE rss_balans SET balans = (balans - ?) WHERE id = ?");
+                if (ui->tableView->selectionModel()->selectedRows(3).at(i).data().toString() == "Приход")
+                {
+                    query->prepare("UPDATE rss_balans SET balans = (balans - ?) WHERE id = ?");
+                }
+                if (ui->tableView->selectionModel()->selectedRows(3).at(i).data().toString() == "Расход")
+                {
+                    query->prepare("UPDATE rss_balans SET balans = (balans + ?) WHERE id = ?");
+                }
+                query->addBindValue(ui->tableView->selectionModel()->selectedRows(2).at(i).data().toString());
+                query->addBindValue(ui->tableView->selectionModel()->selectedRows(15).at(i).data().toString());
+                if (query->exec()) status++;
+                query->clear();
             }
-            if (ui->tableView->selectionModel()->selectedRows(3).at(i).data().toString() == "Расход")
+            else
             {
-                query->prepare("UPDATE rss_balans SET balans = (balans + ?) WHERE id = ?");
+                status++;
             }
-            query->addBindValue(ui->tableView->selectionModel()->selectedRows(2).at(i).data().toString());
-            query->addBindValue(ui->tableView->selectionModel()->selectedRows(15).at(i).data().toString());
-            if (query->exec()) status++;
-            query->clear();
 
             query->prepare("DELETE FROM pp WHERE id = ?");
             query->addBindValue(ui->tableView->selectionModel()->selectedRows(0).at(i).data().toString());
