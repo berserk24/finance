@@ -97,12 +97,16 @@ void general_window::get_access()
     if (query->value(2).toInt() == 1)
     {
         ui->action_load_pp->setEnabled(true);
+        ui->action_create_new_pp->setEnabled(true);
         ui->action_balans_rs->setEnabled(true);
+        ui->action_update_ref_banks->setEnabled(true);
     }
     else
     {
         ui->action_load_pp->setEnabled(false);
+        ui->action_create_new_pp->setEnabled(false);
         ui->action_balans_rs->setEnabled(false);
+        ui->action_update_ref_banks->setEnabled(false);
     }
     if (query->value(3).toInt() == 1)
     {
@@ -452,8 +456,6 @@ general_window::~general_window()
 void general_window::slot_set_enable_menu(int id)
 {
     query = new QSqlQuery;
-
-    query->exec("BEGIN IMMEDIATE TRANSACTION");
     query->prepare("SELECT * FROM users_access WHERE id = ?");
     query->addBindValue(id);
     query->exec();
@@ -468,6 +470,5 @@ void general_window::slot_set_enable_menu(int id)
     ui->menu_report->setEnabled(query->value(4).toBool());
     if (id == 0) ui->menu_settings->setEnabled(query->value(2).toBool());
     query->clear();
-    query->exec("COMMIT");
     delete query;
 }

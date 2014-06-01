@@ -112,7 +112,7 @@ void class_manage_users::slot_add_user()
     int status = 0, st = 0;
     if (ui->pushButton_add->text() == "Добавить")
     {
-        query->exec("CREATE USER " + ui->lineEdit_name->text() + " PASSWORD '" + ui->lineEdit_passwd->text() + "'");
+        query->exec("CREATE ROLE " + ui->lineEdit_name->text() + " LOGIN PASSWORD '" + ui->lineEdit_passwd->text() + "'");
         if (!query->lastError().isValid())
         {
             db->transaction();
@@ -176,20 +176,25 @@ void class_manage_users::slot_add_user()
     {
         if (ui->lineEdit_passwd->text() != "")
         {
-            if (ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString() == "SYSDBA")
+            if (ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString() == "postgres")
             {
                 int ret = QMessageBox::warning(this, tr("Внимание"),
-                                            tr("Вы уверены что хотите изменить пароль пользователя SYSDBA?"),
+                                            tr("Вы уверены что хотите изменить пароль пользователя postgres?"),
                                             QMessageBox::Yes
                                             | QMessageBox::Cancel,
                                             QMessageBox::Yes);
                 switch (ret)
                 {
                     case QMessageBox::Yes:
-                        if (query->exec("ALTER USER " + ui->lineEdit_name->text() + " SET PASSWORD '" + ui->lineEdit_passwd->text() + "'")) status++;
+                        if (query->exec("ALTER ROLE " + ui->lineEdit_name->text() + " LOGIN PASSWORD '" + ui->lineEdit_passwd->text() + "'")) status++;
                         st++;
                         break;
                 }
+            }
+            else
+            {
+                if (query->exec("ALTER ROLE " + ui->lineEdit_name->text() + " LOGIN PASSWORD '" + ui->lineEdit_passwd->text() + "'")) status++;
+                st++;
             }
         }
         query->prepare("UPDATE users_access SET ref = ?, load_pp = ?, work_pp = ?, client = ?, report = ? WHERE id = ?");
@@ -253,7 +258,7 @@ void class_manage_users::slot_add_user()
 void class_manage_users::slot_del_user()
 {
     int status = 0;
-    if (ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString() != "SYSDBA")
+    if (ui->tableView->selectionModel()->selectedIndexes().at(0).data().toString() != "postgres")
     {
         int ret = QMessageBox::warning(this, tr("Внимание"),
                                     tr("Вы уверены что хотите удалить пользователя?"),
@@ -264,7 +269,7 @@ void class_manage_users::slot_del_user()
         {
             case QMessageBox::Yes:
                 db->transaction();
-                if (query->exec("DROP USER " + ui->lineEdit_name->text())) status++;
+                if (query->exec("DROP ROLE " + ui->lineEdit_name->text())) status++;
                 if (query->exec("DELETE FROM users_access WHERE id = '" + ui->lineEdit_name->text() + "'")) status++;
                 if (status == 2)
                 {

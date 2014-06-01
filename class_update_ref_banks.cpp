@@ -50,6 +50,7 @@ void class_update_ref_banks::slot_unzip_file(QString file)
         file_db.close();
         update_reference_bik();
         file_db.remove();
+        zip->close();
         QFile file_arch(file);
         file_arch.remove();
         set_last_update();
@@ -59,7 +60,7 @@ void class_update_ref_banks::slot_unzip_file(QString file)
 void class_update_ref_banks::update_reference_bik()
 {
     QDbf::QDbfTable table;
-    if (!table.open("BNKSEEK.DBF")) {
+    if (!table.open(QApplication::applicationDirPath() + "/BNKSEEK.DBF")) {
         qDebug() << "file open error";
         return;
     }

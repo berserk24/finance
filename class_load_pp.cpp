@@ -389,7 +389,6 @@ void class_load_pp::load_pp(QString file)
 
     if (get_firm_id(inn, kpp) == "")
     {
-        qDebug() << "add firm" << endl;
         query->prepare("INSERT INTO firms (name, inn, kpp, stroy) "
                                 "VALUES (?, ?, ?, 0)");
         query->addBindValue(firm_name);

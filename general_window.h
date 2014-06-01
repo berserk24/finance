@@ -7,7 +7,7 @@
 #include <QSqlQuery>
 #include <QDebug>
 #include <QThread>
-#include <QtConcurrentRun>
+//#include <QtConcurrentRun>
 #include <QLabel>
 #include "class_rss_form.h"
 #include "class_ref_firm.h"

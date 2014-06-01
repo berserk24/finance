@@ -7,6 +7,8 @@
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QNetworkProxy>
+#include <QNetworkProxyFactory>
 #include <QSslError>
 #include <QStringList>
 #include <QTimer>

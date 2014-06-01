@@ -35,6 +35,10 @@ void DownloadManager::execute()
 void DownloadManager::doDownload(const QUrl &url)
 {
     QNetworkRequest request(url);
+    QNetworkProxyQuery npq(QUrl("http://www.google.com"));
+    QList<QNetworkProxy> listOfProxies = QNetworkProxyFactory::systemProxyForQuery(npq);
+    if (listOfProxies.size())
+        QNetworkProxy::setApplicationProxy(listOfProxies[0]);
     QNetworkReply *reply = manager.get(request);
 
     // List of reply
@@ -44,7 +48,7 @@ void DownloadManager::doDownload(const QUrl &url)
 QString DownloadManager::saveFileName(const QUrl &url)
 {
     QString path = url.path();
-    basename = QFileInfo(path).fileName();
+    basename = QCoreApplication::applicationDirPath() + "/" + QFileInfo(path).fileName();
 
     if (basename.isEmpty())
         basename = "download";

@@ -98,3 +98,9 @@ unix:!macx: LIBS += -L$$PWD/../../qdbf/src/build-src-Desktop-Release/lib/ -lQDbf
 
 INCLUDEPATH += $$PWD/../../qdbf/src/src
 DEPENDPATH += $$PWD/../../qdbf/src/src
+
+
+win32: LIBS += -L$$PWD/../qdbf/build-qdbf-Desktop_Qt_5_2_1_MinGW_32bit-Release/lib/ -lQDbf
+
+INCLUDEPATH += $$PWD/../qdbf/build-qdbf-Desktop_Qt_5_2_1_MinGW_32bit-Release
+DEPENDPATH += $$PWD/../qdbf/build-qdbf-Desktop_Qt_5_2_1_MinGW_32bit-Release

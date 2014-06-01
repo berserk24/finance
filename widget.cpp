@@ -58,14 +58,14 @@ void Widget::create_database()
     {
         //Создаём роль
         {
-            //query->exec("CREATE ROLE full_access");
+            query->exec("CREATE ROLE full_access");
         }
 
         //Создаём таблицу версии БД
         {
             query->exec("CREATE TABLE version "
                         "(id SMALLINT NOT NULL)");
-            //query->exec("GRANT ALL ON version TO full_access");
+            query->exec("GRANT ALL ON version TO full_access");
             query->exec("INSERT INTO version (id) VALUES (1)");
         }
 
@@ -76,7 +76,7 @@ void Widget::create_database()
                                         "data VARCHAR(3) UNIQUE, "
                                         "PRIMARY KEY (id));"
                         );
-            //query->exec("GRANT ALL ON yes_no TO full_access");
+            query->exec("GRANT ALL ON yes_no TO full_access");
         }
         {
             query->exec("   INSERT INTO    yes_no   (id, data) "
@@ -93,7 +93,7 @@ void Widget::create_database()
                                     "PRIMARY KEY (id));"
                         );
 
-            //query->exec("GRANT ALL ON pp_in_out TO full_access");
+            query->exec("GRANT ALL ON pp_in_out TO full_access");
         }
 
         //Создаём типы платёжек
@@ -113,7 +113,7 @@ void Widget::create_database()
                                     "data VARCHAR(19) UNIQUE, "
                                     "PRIMARY KEY (id));"
                         );
-            //query->exec("GRANT ALL ON pp_type TO full_access");
+            query->exec("GRANT ALL ON pp_type TO full_access");
         }
 
         //Создаём типы платёжек
@@ -138,6 +138,7 @@ void Widget::create_database()
                                     "UNIQUE (inn, kpp), "
                                     "PRIMARY KEY (id));"
                         );
+            query->exec("GRANT ALL ON firms, seq_firms_id TO full_access");
         }
 
         //Создаём фирму 0
@@ -165,6 +166,7 @@ void Widget::create_database()
                         "ON DELETE CASCADE "
                         "ON UPDATE CASCADE)"
                         );
+            query->exec("GRANT ALL ON rss, seq_rss_id TO full_access");
         }
 
         //Создаём таблицу баланса РС
@@ -178,6 +180,7 @@ void Widget::create_database()
                                     "ON DELETE CASCADE "
                                     "ON UPDATE CASCADE)"
                         );
+            query->exec("GRANT ALL ON rss_balans, seq_rss_balans_id TO full_access");
         }
 
         //Создаём таблицу настроек
@@ -190,6 +193,7 @@ void Widget::create_database()
                                     "PRIMARY KEY (id), "
                                     "UNIQUE (id_user, name))"
                         );
+            query->exec("GRANT ALL ON settings TO full_access");
         }
 
         //Создаём таблицу контрагентов
@@ -208,6 +212,7 @@ void Widget::create_database()
                                     "t_nalic NUMERIC(3,2) NOT NULL, "
                                     "UNIQUE (name))"
                         );
+            query->exec("GRANT ALL ON clients, seq_clients_id TO full_access");
         }
 
         //Создаём клиента для %ов
@@ -228,6 +233,7 @@ void Widget::create_database()
                                     "ON UPDATE CASCADE, "
                                     "PRIMARY KEY (id))"
                         );
+            query->exec("GRANT ALL ON client_balans, seq_client_balans_id TO full_access");
         }
 
         //Создаём баланс 0ого клиента
@@ -252,6 +258,7 @@ void Widget::create_database()
                                     "t_nalic NUMERIC(3,2) NOT NULL, "
                                     "UNIQUE (name))"
                     );
+            query->exec("GRANT ALL ON tarifs, seq_tarifs_id TO full_access");
         }
 
         //Создаём 0ой тариф
@@ -351,6 +358,8 @@ void Widget::create_database()
             query->exec("CREATE INDEX i_client_id ON pp(client_id)");
             query->exec("CREATE INDEX i_type ON pp(type)");
 
+            query->exec("GRANT ALL ON pp, seq_pp_id TO full_access");
+
         }
 
         //Создаём таблицу движений по счёту клиентов
@@ -371,6 +380,7 @@ void Widget::create_database()
                                     "ON UPDATE CASCADE, "
                                     "UNIQUE (id_pp))"
                         );
+            query->exec("GRANT ALL ON clients_operations, seq_cl_opers_id TO full_access");
         }
 
         //Создаём таблицу соотношения платёжек клиенту
@@ -384,6 +394,7 @@ void Widget::create_database()
                                     "ON UPDATE CASCADE, "
                                     "UNIQUE (pp_id, client_id))"
                         );
+            query->exec("GRANT ALL ON pp_to_client, seq_pp_to_client_id TO full_access");
         }
 
         //Создаём таблицу прав пользоваталей
@@ -397,6 +408,7 @@ void Widget::create_database()
                                     "report SMALLINT NOT NULL, "
                                     "client SMALLINT NOT NULL) "
                         );
+            query->exec("GRANT ALL ON users_access, seq_user_access_id TO full_access");
         }
 
         //Права пользователя admin
@@ -428,6 +440,7 @@ void Widget::create_database()
                                     "ON DELETE CASCADE "
                                     "ON UPDATE CASCADE)"
                         );
+            query->exec("GRANT ALL ON save_actions, seq_save_actions_id TO full_access");
         }
         query->exec("UPDATE version SET id = 2");
     }
@@ -445,6 +458,7 @@ void Widget::create_database()
                                     "data DATE NOT NULL, "
                                     "PRIMARY KEY (id))"
                         );
+            query->exec("GRANT ALL ON update_date, seq_update_date_id TO full_access");
         }
 
         {
@@ -470,6 +484,7 @@ void Widget::create_database()
                         "END; "
                         "$BODY$ "
                         "LANGUAGE 'plpgsql'");
+            query->exec("GRANT ALL ON action_ TO full_access");
         }
         query->exec("UPDATE version SET id = 3");
     }
@@ -494,6 +509,7 @@ void Widget::create_database()
                                     "ks VARCHAR(20) NOT NULL, "            //23 KSNP:
                                     "PRIMARY KEY (id))"
                         );
+            query->exec("GRANT ALL ON ref_banks TO full_access");
             {
                 query->exec("INSERT INTO update_date (id, data) "
                             "VALUES ('bik_update', '01.05.2014')");
@@ -519,6 +535,7 @@ void Widget::create_database()
                                     "ON DELETE CASCADE "
                                     "ON UPDATE CASCADE)"
                         );
+            query->exec("GRANT ALL ON count_pp TO full_access");
         }
         query->exec("UPDATE version SET id = 5");
     }
@@ -536,6 +553,7 @@ void Widget::create_database()
                                     "data VARCHAR(9) NOT NULL, "
                                     "PRIMARY KEY (id))"
                         );
+            query->exec("GRANT ALL ON status_pp TO full_access");
         }
         {
             query->exec("INSERT INTO status_pp (id, data) "
@@ -550,6 +568,7 @@ void Widget::create_database()
         query->exec("UPDATE version SET id = 6");
     }
 
+
     this->hide();
     gen_window = new general_window(0, db);
     gen_window->show();
@@ -563,7 +582,7 @@ void Widget::slot_login()
     db->setHostName("localhost");
     db->setUserName(ui->lineEdit_login->text());
     db->setPassword(ui->lineEdit_passwd->text());
-    //if (ui->lineEdit_login->text() != "SYSDBA")
+    //if (ui->lineEdit_login->text() != "postgres")
     //    db->setConnectOptions("ISC_DPB_SQL_ROLE_NAME=FULL_ACCESS");
     if (!db->open())
     {
@@ -588,8 +607,10 @@ void Widget::slot_login()
                             "WITH OWNER = postgres "
                             "ENCODING = 'UTF8' "
                             "TABLESPACE = pg_default "
+#if defined(Q_OS_LINUX)
                             "LC_COLLATE = 'ru_RU.UTF-8' "
                             "LC_CTYPE = 'ru_RU.UTF-8' "
+#endif
                             "CONNECTION LIMIT = -1;");
                 if (query->lastError().text() == " ")
                 {
