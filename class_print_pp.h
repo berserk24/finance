@@ -23,6 +23,7 @@ private:
     QPrintPreviewDialog *preview;
     QFileDialog *open_dialog;
     QSqlQuery *query;
+    QString int_to_string(double n);
 
 signals:
 
