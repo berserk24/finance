@@ -20,6 +20,7 @@ class_create_pp::class_create_pp(QWidget *parent) :
     //Раскрываем/скрываем разделы
     connect(ui->groupBox_gen_info, SIGNAL(clicked(bool)), SLOT(slot_show_info(bool)));
     connect(ui->groupBox_payer, SIGNAL(clicked(bool)), SLOT(slot_show_payer(bool)));
+    connect(ui->groupBox_payer_recv, SIGNAL(clicked(bool)), SLOT(slot_show_payer_recv(bool)));
     connect(ui->groupBox_receiver, SIGNAL(clicked(bool)), SLOT(slot_show_receiver(bool)));
     connect(ui->groupBox_dest_pay, SIGNAL(clicked(bool)), SLOT(slot_show_dest_pay(bool)));
     connect(ui->groupBox_budget, SIGNAL(clicked(bool)), SLOT(slot_show_budget(bool)));
@@ -44,6 +45,7 @@ class_create_pp::class_create_pp(QWidget *parent) :
         connect(ui->comboBox_ocherednost, SIGNAL(editTextChanged(QString)), SLOT(slot_set_enable_add()));
         connect(ui->comboBox_type_pp, SIGNAL(editTextChanged(QString)), SLOT(slot_set_enable_add()));
         connect(ui->lineEdit_payer, SIGNAL(textEdited(QString)), SLOT(slot_set_enable_add()));
+        connect(ui->lineEdit_payer, SIGNAL(textEdited(QString)), SLOT(slot_set_enable_add()));
         connect(ui->lineEdit_payer_bank, SIGNAL(textEdited(QString)), SLOT(slot_set_enable_add()));
         connect(ui->lineEdit_payer_bank2, SIGNAL(textEdited(QString)), SLOT(slot_set_enable_add()));
         connect(ui->lineEdit_payer_inn, SIGNAL(textEdited(QString)), SLOT(slot_set_enable_add()));
@@ -60,6 +62,32 @@ class_create_pp::class_create_pp(QWidget *parent) :
 
     //Создаём платёжку
     connect(ui->pushButton_create_pp, SIGNAL(clicked()), SLOT(slot_create_pp()));
+
+    //
+    connect(ui->comboBox_nds, SIGNAL(currentIndexChanged(int)), SLOT(slot_set_dest_pay()));
+    connect(ui->lineEdit_nds, SIGNAL(textChanged(QString)), SLOT(slot_set_dest_pay()));
+    connect(ui->lineEdit_sum, SIGNAL(textChanged(QString)), SLOT(slot_set_dest_pay()));
+}
+
+//
+void class_create_pp::slot_set_dest_pay()
+{
+    if (ui->comboBox_nds->currentIndex() == 0)
+    {
+        ui->lineEdit_dest_pay->setText(ui->lineEdit_dest_pay->text().mid(0,ui->lineEdit_dest_pay->text().indexOf(",\r")) + ",\r в т. ч. НДС (" + ui->lineEdit_nds->text() + "%) - " + QString::number(ui->lineEdit_sum->text().toFloat()*ui->lineEdit_nds->text().toInt()/(100+ui->lineEdit_nds->text().toInt()), 'f', 2));
+        if (sender() == ui->comboBox_nds)
+            ui->lineEdit_nds->setText("18");
+    }
+    if (ui->comboBox_nds->currentIndex() == 1)
+    {
+        ui->lineEdit_dest_pay->setText(ui->lineEdit_dest_pay->text().mid(0,ui->lineEdit_dest_pay->text().indexOf(",\r")) + ",\r НДС не облагается");
+        ui->lineEdit_nds->setText("");
+    }
+    if (ui->comboBox_nds->currentIndex() == 2)
+    {
+        ui->lineEdit_dest_pay->setText(ui->lineEdit_dest_pay->text().mid(0,ui->lineEdit_dest_pay->text().indexOf(",\r")));
+        ui->lineEdit_nds->setText("");
+    }
 }
 
 //Создаём платёжку
@@ -117,12 +145,7 @@ void class_create_pp::slot_create_pp()
         query->addBindValue(str_null);
         query->addBindValue(str_null);
         query->addBindValue(str_null);
-        if (ui->comboBox_nds->currentIndex() == 0)
-            query->addBindValue(ui->lineEdit_dest_pay->text() + ", НДС не облагается");
-        if (ui->comboBox_nds->currentIndex() == 1)
-            query->addBindValue(ui->lineEdit_dest_pay->text() + ", в т. ч. НДС (10%) - " + QString::number(ui->lineEdit_sum->text().toFloat()*10/110, 'f', 2));
-        if (ui->comboBox_nds->currentIndex() == 2)
-            query->addBindValue(ui->lineEdit_dest_pay->text() + ", в т. ч. НДС (18%) - " + QString::number(ui->lineEdit_sum->text().toFloat()*18/118, 'f', 2));
+        query->addBindValue(ui->lineEdit_dest_pay->text().replace("\r", ""));
         query->addBindValue(str_null);
         query->addBindValue(str_null);
         query->addBindValue(str_null);
@@ -205,34 +228,19 @@ void class_create_pp::slot_set_regexp()
     ui->lineEdit_receiver_rs->setValidator(validator);
     validator = new QRegExpValidator(QRegExp("^[1-9]\\d{0,8}|^[1-9]\\d{0,8}.[0-9][0-9]|^0.[0-9][0-9]"), this);
     ui->lineEdit_sum->setValidator(validator);
+    validator = new QRegExpValidator(QRegExp("^[1-9]\\d{1}"), this);
+    ui->lineEdit_nds->setValidator(validator);
 }
 
 //Автозаполнение реквизитов получателя
 void class_create_pp::slot_load_auto_rekv()
 {
-    QString str1, str;
+    QString str, str1, str2 = "", str3 = "";
     str1 = "";
     str = ui->plainTextEdit_receiver_auto->toPlainText();
     while (str.length() > 1)
     {
         str1 = str.mid(0, str.indexOf("\n"));
-        if ((str1.length() == 10 or str1.length() == 12) and str1.mid(0,4).toInt() > 99)
-            ui->lineEdit_receiver_inn->setText(str1);
-        if (str1.length() == 9 and str1.mid(0, 2) == "04")
-        {
-            ui->comboBox_receiver_bik->setCurrentIndex(ui->comboBox_receiver_bik->findText(str1));
-        }
-        else if (str1.length() == 9 and str1.mid(0, 3).toInt() > 99)
-        {
-            ui->lineEdit_receiver_kpp->setText(str1);
-        }
-        if (str1.length() == 20 and str1.mid(0,3).toInt() > 99)
-            ui->lineEdit_receiver_rs->setText(str1);
-        if (str1.mid(0,4).toInt() == 0 and ui->lineEdit_receiver->text() == "")
-            ui->lineEdit_receiver->setText(str1);
-        else if (str1.mid(0,4).toInt() == 0 and ui->lineEdit_dest_pay->text() == "")
-            ui->lineEdit_dest_pay->setText(str1);
-
         if (str.indexOf("\n") != -1)
         {
             str.remove(0, str.indexOf("\n") + 1);
@@ -241,12 +249,48 @@ void class_create_pp::slot_load_auto_rekv()
         {
             str.remove(0, str.length());
         }
-        if (ui->lineEdit_receiver->text().length() > ui->lineEdit_dest_pay->text().length() and ui->lineEdit_dest_pay->text() != "")
+        if ((str1.length() == 10 or str1.length() == 12) and str1.mid(0,4).toInt() > 99)
         {
-            str1 = ui->lineEdit_dest_pay->text();
-            ui->lineEdit_dest_pay->setText(ui->lineEdit_receiver->text());
-            ui->lineEdit_receiver->setText(str1);
+            ui->lineEdit_receiver_inn->setText(str1);
+            continue;
         }
+        if (str1.length() == 9 and str1.mid(0, 2) == "04")
+        {
+            ui->comboBox_receiver_bik->setCurrentIndex(ui->comboBox_receiver_bik->findText(str1));
+            continue;
+        }
+        else if (str1.length() == 9 and str1.mid(0, 3).toInt() > 99)
+        {
+            ui->lineEdit_receiver_kpp->setText(str1);
+            continue;
+        }
+        if (str1.length() == 20 and str1.mid(0,3).toInt() > 99)
+        {
+            ui->lineEdit_receiver_rs->setText(str1);
+            continue;
+        }
+        if (str2 == "")
+        {
+            str2 = str1;
+            continue;
+        }
+        if (str3 == "")
+        {
+            str3 = str1;
+            continue;
+        }
+    }
+    if (str2 > str3)
+    {
+        ui->lineEdit_receiver->setText(str3);
+        ui->lineEdit_dest_pay->setText(str2);
+        slot_set_dest_pay();
+    }
+    else
+    {
+        ui->lineEdit_receiver->setText(str2);
+        ui->lineEdit_dest_pay->setText(str3);
+        slot_set_dest_pay();
     }
 }
 
@@ -283,13 +327,27 @@ void class_create_pp::slot_show_payer(bool state)
 {
     if (state)
     {
-        ui->groupBox_payer->setMinimumHeight(200);
-        ui->groupBox_payer->setMaximumHeight(200);
+        ui->groupBox_payer->setMinimumHeight(100);
+        ui->groupBox_payer->setMaximumHeight(250);
     }
     else
     {
         ui->groupBox_payer->setMinimumHeight(20);
         ui->groupBox_payer->setMaximumHeight(20);
+    }
+}
+
+void class_create_pp::slot_show_payer_recv(bool state)
+{
+    if (state)
+    {
+        ui->groupBox_payer_recv->setMinimumHeight(150);
+        ui->groupBox_payer_recv->setMaximumHeight(150);
+    }
+    else
+    {
+        ui->groupBox_payer_recv->setMinimumHeight(20);
+        ui->groupBox_payer_recv->setMaximumHeight(20);
     }
 }
 
@@ -365,10 +423,10 @@ void class_create_pp::slot_get_count_pp()
     {
         query->clear();
         query->prepare("UPDATE count_pp SET date_count = ?, count_pp = 1 WHERE id = ?");
-        query->addBindValue(QDate::currentDate());
+        query->addBindValue(QDate(QDate::currentDate().year()+1, 1, 1));
         query->addBindValue(id);
         query->exec();
-        count = 1;
+        count = "1";
     }
     query->clear();
     ui->lineEdit_pp_num->setText(count);

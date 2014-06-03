@@ -22,6 +22,7 @@ signals:
 public slots:
     void slot_show_info(bool state);
     void slot_show_payer(bool state);
+    void slot_show_payer_recv(bool state);
     void slot_show_receiver(bool state);
     void slot_show_dest_pay(bool state);
     void slot_show_budget(bool state);
@@ -38,6 +39,7 @@ public slots:
     void slot_load_auto_rekv();
     void slot_set_enable_add();
     void slot_create_pp();
+    void slot_set_dest_pay();
 
 private:
     Ui::class_create_pp *ui;

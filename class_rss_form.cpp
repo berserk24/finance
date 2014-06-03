@@ -107,7 +107,7 @@ void class_rss_form::slot_add_rs()
         query->prepare("INSERT INTO count_pp (id, date_count, count_pp) "
                        "VALUES (?, ?, 1)");
         query->addBindValue(id);
-        query->addBindValue(QDate::currentDate());
+        query->addBindValue(QDate(QDate::currentDate().year()+1, 1, 1));
         if (query->exec()) status++;
         query->clear();
         if (status == 4)
