@@ -15,6 +15,7 @@ class_create_pp::class_create_pp(QWidget *parent) :
     slot_load_firm();
     slot_set_date();
     slot_load_bik();
+    slot_set_dest_pay();
     slot_select_receiver_bank_city(ui->comboBox_receiver_bik->itemData(ui->comboBox_receiver_bik->currentIndex()).toInt());
 
     //Раскрываем/скрываем разделы
@@ -58,18 +59,18 @@ class_create_pp::class_create_pp(QWidget *parent) :
         connect(ui->lineEdit_dest_pay, SIGNAL(textEdited(QString)), SLOT(slot_set_enable_add()));
         connect(ui->comboBox_receiver_bank, SIGNAL(editTextChanged(QString)), SLOT(slot_set_enable_add()));
         connect(ui->comboBox_receiver_bik, SIGNAL(editTextChanged(QString)), SLOT(slot_set_enable_add()));
+        connect(ui->pushButton_load_receiver, SIGNAL(clicked()), SLOT(slot_set_enable_add()));
     }
 
     //Создаём платёжку
     connect(ui->pushButton_create_pp, SIGNAL(clicked()), SLOT(slot_create_pp()));
 
-    //
+    //Заполняем назначение платежа
     connect(ui->comboBox_nds, SIGNAL(currentIndexChanged(int)), SLOT(slot_set_dest_pay()));
     connect(ui->lineEdit_nds, SIGNAL(textChanged(QString)), SLOT(slot_set_dest_pay()));
     connect(ui->lineEdit_sum, SIGNAL(textChanged(QString)), SLOT(slot_set_dest_pay()));
 }
-
-//
+//Заполняем назначение платежа
 void class_create_pp::slot_set_dest_pay()
 {
     if (ui->comboBox_nds->currentIndex() == 0)
@@ -180,6 +181,11 @@ void class_create_pp::slot_create_pp()
             query->addBindValue(ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()).toString());
             query->exec();
             query->clear();
+            query->prepare("UPDATE rss_balans SET balans = (balans - ?) WHERE id = ?");
+            query->addBindValue(ui->lineEdit_sum->text());
+            query->addBindValue(ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()).toString());
+            query->exec();
+            query->clear();
         }
     }
     slot_clear_form();
@@ -199,7 +205,8 @@ void class_create_pp::slot_set_enable_add()
         and ui->comboBox_receiver_bank->currentText().replace(" ", "") != "" and ui->comboBox_receiver_bik->currentText().length() == 9
         and (ui->lineEdit_receiver_inn->text().length() == 10 or ui->lineEdit_receiver_inn->text().length() == 12)
         and ui->lineEdit_receiver_rs->text().length() == 20 and ui->lineEdit_receiver_rs->text().length() == 20
-        and ui->lineEdit_dest_pay->text().replace(" ", "") != "")
+        and ui->lineEdit_dest_pay->text().replace(" ", "") != ""
+        and ui->lineEdit_balans_rs->text().toDouble() > ui->lineEdit_sum->text().toDouble())
     {
         ui->pushButton_create_pp->setEnabled(true);
     }
@@ -334,6 +341,9 @@ void class_create_pp::slot_show_payer(bool state)
     {
         ui->groupBox_payer->setMinimumHeight(20);
         ui->groupBox_payer->setMaximumHeight(20);
+        ui->groupBox_payer_recv->setMinimumHeight(20);
+        ui->groupBox_payer_recv->setMaximumHeight(20);
+        ui->groupBox_payer_recv->setChecked(false);
     }
 }
 
@@ -341,11 +351,13 @@ void class_create_pp::slot_show_payer_recv(bool state)
 {
     if (state)
     {
+        ui->groupBox_payer->setMinimumHeight(250);
         ui->groupBox_payer_recv->setMinimumHeight(150);
         ui->groupBox_payer_recv->setMaximumHeight(150);
     }
     else
     {
+        ui->groupBox_payer->setMinimumHeight(100);
         ui->groupBox_payer_recv->setMinimumHeight(20);
         ui->groupBox_payer_recv->setMaximumHeight(20);
     }
@@ -435,14 +447,24 @@ void class_create_pp::slot_get_count_pp()
 //Заполняем расчётные счета
 void class_create_pp::slot_load_rss()
 {
-    query->exec("SELECT id, name FROM rss ORDER BY id");
-    query->first();
-    ui->comboBox_payer_rs->addItem(query->value(1).toString(), QVariant(query->value(0).toInt()));
-    while(query->next())
+    QSqlQuery *query_rs = new QSqlQuery;
+    int n = 0;
+    if (ui->comboBox_payer_rs->count() > 0 or ui->comboBox_payer_rs->currentIndex() > 0)
     {
-        ui->comboBox_payer_rs->addItem(query->value(1).toString(), QVariant(query->value(0).toInt()));
+        n = ui->comboBox_payer_rs->currentIndex();
     }
-    query->clear();
+    ui->comboBox_payer_rs->clear();
+    query_rs->exec("SELECT id, name FROM rss ORDER BY id");
+    query_rs->first();
+
+    ui->comboBox_payer_rs->addItem(query_rs->value(1).toString(), QVariant(query_rs->value(0).toInt()));
+    while(query_rs->next())
+    {
+        ui->comboBox_payer_rs->addItem(query_rs->value(1).toString(), QVariant(query_rs->value(0).toInt()));
+    }
+    query_rs->clear();
+    ui->comboBox_payer_rs->setCurrentIndex(n);
+    delete query_rs;
 }
 
 //Устанавливаем интервал даты
@@ -476,6 +498,15 @@ void class_create_pp::slot_load_firm()
     ui->lineEdit_payer_bik->setText(bik);
     ui->lineEdit_payer_bank2->setText(query->value(2).toString());
     ui->lineEdit_payer_ks->setText(query->value(8).toString());
+    query->clear();
+    query->prepare("SELECT CAST(balans.balans + rss.start_balans AS VARCHAR(20)) "
+                   "FROM rss_balans balans "
+                   "LEFT JOIN rss ON balans.id = rss.id "
+                   "WHERE rss.id = ?");
+    query->addBindValue(ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()).toInt());
+    query->exec();
+    query->first();
+    ui->lineEdit_balans_rs->setText(query->value(0).toString());
     query->clear();
 }
 

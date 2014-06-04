@@ -404,6 +404,13 @@ void general_window::slot_refresh_tab(int tab)
             client_pay->select_client();
         }
     }
+    if (i_new_pp > -1)
+    {
+        if (ui->tabWidget->indexOf(new_pp) == tab)
+        {
+            new_pp->slot_load_rss();
+        }
+    }
     if (i_balans_client > -1)
     {
         if (ui->tabWidget->indexOf(balans_client) == tab)
@@ -417,6 +424,13 @@ void general_window::slot_refresh_tab(int tab)
         if (ui->tabWidget->indexOf(balans_rs) == tab)
         {
             balans_rs->slot_select_table();
+        }
+    }
+    if (i_report_client > -1)
+    {
+        if (ui->tabWidget->indexOf(report_client) == tab)
+        {
+            report_client->slot_select_client();
         }
     }
     if (i_pp > -1)

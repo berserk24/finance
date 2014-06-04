@@ -48,7 +48,7 @@ void class_report_client::slot_gen_report()
                    "WHERE oper.date_oper <= ? "
                    "AND oper.date_oper >= ? "
                    "AND (oper.id_client = ? OR oper.to_client_id = ?) "
-                   "ORDER BY oper.date_oper");
+                   "ORDER BY oper.id");
     if (ui->comboBox_client->currentText() == "Наш счёт")
         query->prepare("SELECT oper.date_oper, COALESCE(pf.name, pp.payer1 , pp.payer), COALESCE(rf.name, pp.receiver1, pp.receiver), type.id, CAST(oper.summ AS VARCHAR(18)), oper.margin, oper.to_client_id, oper.id_client, clients.name, pp.num, oper.text, cl_to.name "
                    "FROM clients_operations oper "
@@ -61,7 +61,7 @@ void class_report_client::slot_gen_report()
                    "WHERE oper.date_oper <= ? "
                    "AND oper.date_oper >= ? "
                    "AND (oper.id_client = ? OR oper.to_client_id = ? OR oper.margin > 0) "
-                   "ORDER BY oper.date_oper");
+                   "ORDER BY oper.id");
     query->addBindValue(ui->dateEdit_po->date());
     query->addBindValue(ui->dateEdit_s->date());
     query->addBindValue(ui->comboBox_client->itemData(ui->comboBox_client->currentIndex()));

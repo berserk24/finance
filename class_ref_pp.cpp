@@ -635,25 +635,18 @@ void class_ref_pp::slot_cancel_pp()
 
             int status = 0;
             db->transaction();
-            if (ui->tableView->selectionModel()->selectedRows(16).at(i).data().toString() == "Принят")
+            if (ui->tableView->selectionModel()->selectedRows(3).at(i).data().toString() == "Приход")
             {
-                if (ui->tableView->selectionModel()->selectedRows(3).at(i).data().toString() == "Приход")
-                {
-                    query->prepare("UPDATE rss_balans SET balans = (balans - ?) WHERE id = ?");
-                }
-                if (ui->tableView->selectionModel()->selectedRows(3).at(i).data().toString() == "Расход")
-                {
-                    query->prepare("UPDATE rss_balans SET balans = (balans + ?) WHERE id = ?");
-                }
-                query->addBindValue(ui->tableView->selectionModel()->selectedRows(2).at(i).data().toString());
-                query->addBindValue(ui->tableView->selectionModel()->selectedRows(15).at(i).data().toString());
-                if (query->exec()) status++;
-                query->clear();
+                query->prepare("UPDATE rss_balans SET balans = (balans - ?) WHERE id = ?");
             }
-            else
+            if (ui->tableView->selectionModel()->selectedRows(3).at(i).data().toString() == "Расход")
             {
-                status++;
+                query->prepare("UPDATE rss_balans SET balans = (balans + ?) WHERE id = ?");
             }
+            query->addBindValue(ui->tableView->selectionModel()->selectedRows(2).at(i).data().toString());
+            query->addBindValue(ui->tableView->selectionModel()->selectedRows(15).at(i).data().toString());
+            if (query->exec()) status++;
+            query->clear();
 
             query->prepare("DELETE FROM pp WHERE id = ?");
             query->addBindValue(ui->tableView->selectionModel()->selectedRows(0).at(i).data().toString());
