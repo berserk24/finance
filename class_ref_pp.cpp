@@ -10,6 +10,18 @@ class_ref_pp::class_ref_pp(QWidget *parent, QSqlDatabase *db1) :
     db = db1;
     settings = new QSettings(QSettings::UserScope, "finance", "finance", this);
 
+    context_menu = new QMenu;
+    action_copy = new QAction("Копировать", this);
+    action_edit = new QAction("Изменить", this);
+    action_del = new QAction("Удалить", this);
+
+    context_menu->addAction(action_copy);
+    context_menu->addAction(action_edit);
+    context_menu->addAction(action_del);
+    ui->tableView->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    connect(ui->tableView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(slot_show_context_menu(QPoint)));
+
     //client_id = u_id;
     slot_get_access();
     //ui->pushButton_add_client->setEnabled(access);
@@ -57,6 +69,7 @@ class_ref_pp::class_ref_pp(QWidget *parent, QSqlDatabase *db1) :
 
     //Удаление ПП
     connect(ui->pushButton_del, SIGNAL(clicked()), SLOT(slot_cancel_pp()));
+    connect(action_del, SIGNAL(triggered()), SLOT(slot_cancel_pp()));
 
     //Печатаем платёжку
     connect(ui->comboBox_print_save, SIGNAL(activated(QString)), SLOT(slot_print_pp(QString)));
@@ -72,6 +85,32 @@ class_ref_pp::class_ref_pp(QWidget *parent, QSqlDatabase *db1) :
 
     //Считаем сумму выделенных строк
     connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(slot_sum_balans_rs()));
+}
+
+//
+void class_ref_pp::slot_show_context_menu(QPoint point)
+{
+    if (ui->tableView->selectionModel()->selectedIndexes().size() == 17 and ui->tableView->selectionModel()->selectedIndexes().at(3).data().toString() == "Расход" and ui->tableView->selectionModel()->selectedIndexes().at(9).data().toString() == "Платежное поручение")
+    {
+        action_copy->setEnabled(true);
+        action_edit->setEnabled(true);
+        action_del->setEnabled(true);
+        context_menu->exec(ui->tableView->mapToGlobal(point + QPoint(20,40)));
+    }
+    if (ui->tableView->selectionModel()->selectedIndexes().size() == 17 and ui->tableView->selectionModel()->selectedIndexes().at(3).data().toString() == "Приход")
+    {
+        action_copy->setEnabled(false);
+        action_edit->setEnabled(false);
+        action_del->setEnabled(true);
+        context_menu->exec(ui->tableView->mapToGlobal(point + QPoint(20,40)));
+    }
+    if (ui->tableView->selectionModel()->selectedIndexes().size() > 17)
+    {
+        action_copy->setEnabled(false);
+        action_edit->setEnabled(false);
+        action_del->setEnabled(true);
+        context_menu->exec(ui->tableView->mapToGlobal(point + QPoint(20,40)));
+    }
 }
 
 //Считаем сумму выделенных строк

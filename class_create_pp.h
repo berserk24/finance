@@ -44,6 +44,7 @@ public slots:
 private:
     Ui::class_create_pp *ui;
     QSqlQuery *query;
+    int count_pp;
 
 };
 

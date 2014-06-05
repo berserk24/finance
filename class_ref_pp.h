@@ -21,6 +21,8 @@
 #include <QPrintDialog>
 #include <QFile>
 #include <QSettings>
+#include <QMenu>
+#include <QAction>
 #include <QDebug>
 
 namespace Ui {
@@ -56,6 +58,7 @@ public slots:
     void slot_write_settings_view();
     void slot_set_settings_header(QList<bool>);
     void slot_sum_balans_rs();
+    void slot_show_context_menu(QPoint point);
 
 private:
     Ui::class_ref_pp *ui;
@@ -75,6 +78,8 @@ private:
     QSettings *settings;
     QHeaderView *pH;
     QSqlDatabase *db;
+    QMenu *context_menu;
+    QAction *action_copy, *action_edit, *action_del;
     QString get_settings();
 
     bool str_to_bool(QString);

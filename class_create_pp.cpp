@@ -60,6 +60,7 @@ class_create_pp::class_create_pp(QWidget *parent) :
         connect(ui->comboBox_receiver_bank, SIGNAL(editTextChanged(QString)), SLOT(slot_set_enable_add()));
         connect(ui->comboBox_receiver_bik, SIGNAL(editTextChanged(QString)), SLOT(slot_set_enable_add()));
         connect(ui->pushButton_load_receiver, SIGNAL(clicked()), SLOT(slot_set_enable_add()));
+        connect(ui->lineEdit_pp_num, SIGNAL(textChanged(QString)), SLOT(slot_set_enable_add()));
     }
 
     //Создаём платёжку
@@ -177,7 +178,8 @@ void class_create_pp::slot_create_pp()
         if (query->exec())
         {
             query->clear();
-            query->prepare("UPDATE count_pp SET count_pp=count_pp+1 WHERE id = ?");
+            query->prepare("UPDATE count_pp SET count_pp=?+1 WHERE id = ?");
+            query->addBindValue(ui->lineEdit_pp_num->text().toInt());
             query->addBindValue(ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()).toString());
             query->exec();
             query->clear();
@@ -206,7 +208,7 @@ void class_create_pp::slot_set_enable_add()
         and (ui->lineEdit_receiver_inn->text().length() == 10 or ui->lineEdit_receiver_inn->text().length() == 12)
         and ui->lineEdit_receiver_rs->text().length() == 20 and ui->lineEdit_receiver_rs->text().length() == 20
         and ui->lineEdit_dest_pay->text().replace(" ", "") != ""
-        and ui->lineEdit_balans_rs->text().toDouble() > ui->lineEdit_sum->text().toDouble())
+        and ui->lineEdit_balans_rs->text().toDouble() > ui->lineEdit_sum->text().toDouble() and count_pp <= ui->lineEdit_pp_num->text().toInt())
     {
         ui->pushButton_create_pp->setEnabled(true);
     }
@@ -300,6 +302,7 @@ void class_create_pp::slot_load_auto_rekv()
         slot_set_dest_pay();
     }
 }
+
 
 //Раскрываем/скрываем разделы
 void class_create_pp::slot_show_auto_receiver(bool state)
@@ -442,6 +445,7 @@ void class_create_pp::slot_get_count_pp()
     }
     query->clear();
     ui->lineEdit_pp_num->setText(count);
+    count_pp = count.toInt();
 }
 
 //Заполняем расчётные счета
