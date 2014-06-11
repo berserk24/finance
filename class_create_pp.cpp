@@ -1,11 +1,14 @@
 #include "class_create_pp.h"
 #include "ui_class_create_pp.h"
 
-class_create_pp::class_create_pp(QWidget *parent) :
+class_create_pp::class_create_pp(QWidget *parent, int id, int type) :
     QWidget(parent),
     ui(new Ui::class_create_pp)
 {
     ui->setupUi(this);
+
+    pp_id = id;
+    act_type = type;
 
     query = new QSqlQuery;
 
@@ -17,6 +20,7 @@ class_create_pp::class_create_pp(QWidget *parent) :
     slot_load_bik();
     slot_set_dest_pay();
     slot_select_receiver_bank_city(ui->comboBox_receiver_bik->itemData(ui->comboBox_receiver_bik->currentIndex()).toInt());
+    slot_load_pp();
 
     //Раскрываем/скрываем разделы
     connect(ui->groupBox_gen_info, SIGNAL(clicked(bool)), SLOT(slot_show_info(bool)));
@@ -44,7 +48,7 @@ class_create_pp::class_create_pp(QWidget *parent) :
     {
         connect(ui->lineEdit_sum, SIGNAL(textEdited(QString)), SLOT(slot_set_enable_add()));
         connect(ui->comboBox_ocherednost, SIGNAL(editTextChanged(QString)), SLOT(slot_set_enable_add()));
-        connect(ui->comboBox_type_pp, SIGNAL(editTextChanged(QString)), SLOT(slot_set_enable_add()));
+        connect(ui->comboBox_type_pay, SIGNAL(editTextChanged(QString)), SLOT(slot_set_enable_add()));
         connect(ui->lineEdit_payer, SIGNAL(textEdited(QString)), SLOT(slot_set_enable_add()));
         connect(ui->lineEdit_payer, SIGNAL(textEdited(QString)), SLOT(slot_set_enable_add()));
         connect(ui->lineEdit_payer_bank, SIGNAL(textEdited(QString)), SLOT(slot_set_enable_add()));
@@ -71,6 +75,47 @@ class_create_pp::class_create_pp(QWidget *parent) :
     connect(ui->lineEdit_nds, SIGNAL(textChanged(QString)), SLOT(slot_set_dest_pay()));
     connect(ui->lineEdit_sum, SIGNAL(textChanged(QString)), SLOT(slot_set_dest_pay()));
 }
+
+//
+void class_create_pp::slot_load_pp()
+{
+    if (act_type > 0)
+    {
+        query->prepare("SELECT * FROM pp WHERE id = ?");
+        query->addBindValue(pp_id);
+        query->exec();
+        query->first();
+
+        ui->lineEdit_pp_num->setText(query->value(5).toString());
+        count_pp_first = query->value(5).toInt();
+        ui->lineEdit_sum->setText(query->value(8).toString());
+        summ = query->value(8).toString();
+        if (query->value(58).toString() != "5")
+        {
+            ui->comboBox_ocherednost->addItem(query->value(58).toString());
+            ui->comboBox_ocherednost->setCurrentIndex(ui->comboBox_ocherednost->findText(query->value(58).toString()));
+        }
+        if (query->value(39).toString() != "01")
+        {
+            ui->comboBox_type_pay->addItem(query->value(39).toString());
+            ui->comboBox_type_pay->setCurrentIndex(ui->comboBox_type_pay->findText(query->value(39).toString()));
+        }
+        ui->comboBox_payer_rs->setCurrentIndex(ui->comboBox_payer_rs->findData(query->value(1).toString()));
+        payer_rs = query->value(1).toInt();
+        ui->lineEdit_receiver->setText(query->value(27).toString());
+        ui->lineEdit_receiver_inn->setText(query->value(28).toString());
+        ui->lineEdit_receiver_kpp->setText(query->value(50).toString());
+        ui->lineEdit_receiver_rs->setText(query->value(25).toString());
+        ui->comboBox_receiver_bik->setCurrentIndex(ui->comboBox_receiver_bik->findText(query->value(36).toString()));
+        ui->comboBox_receiver_bank->setCurrentIndex(ui->comboBox_receiver_bank->findText(query->value(34).toString()));
+        ui->lineEdit_receiver_bank2->setText(query->value(35).toString());
+        ui->lineEdit_receiver_ks->setText(query->value(37).toString());
+        ui->lineEdit_dest_pay->setText(query->value(41).toString());
+    }
+    if (act_type == 2) ui->pushButton_create_pp->setText("Измеить ПП");
+    slot_set_enable_add();
+}
+
 //Заполняем назначение платежа
 void class_create_pp::slot_set_dest_pay()
 {
@@ -95,15 +140,15 @@ void class_create_pp::slot_set_dest_pay()
 //Создаём платёжку
 void class_create_pp::slot_create_pp()
 {
+    QString count, str_null;
+    str_null = QString::null;
+    query->prepare("SELECT number FROM rss WHERE id = ?");
+    query->addBindValue(ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()).toString());
+    query->exec();
+    query->first();
+    count = query->value(0).toString();
+    if (act_type != 2)
     {
-        QString count, str_null;
-        str_null = QString::null;
-        query->prepare("SELECT number FROM rss WHERE id = ?");
-        query->addBindValue(ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()).toString());
-        query->exec();
-        query->first();
-        count = query->value(0).toString();
-
         query->prepare("INSERT INTO pp (rs_id, type_pp, type_doc, num, date_pp, date_oper, sum_pp, payer_count,"
                                         "payer, payer_inn, payer1, payer2, payer3, payer4, payer_rs, payer_bank1,"
                                         "payer_bank2, payer_bik, payer_ks, receiver_count, receiver, receiver_inn, receiver1, receiver2, receiver3,"
@@ -145,7 +190,7 @@ void class_create_pp::slot_create_pp()
         query->addBindValue(ui->comboBox_receiver_bik->currentText());
         query->addBindValue(ui->lineEdit_receiver_ks->text());
         query->addBindValue(str_null);
-        query->addBindValue(str_null);
+        query->addBindValue(ui->comboBox_type_pay->currentText());
         query->addBindValue(str_null);
         query->addBindValue(ui->lineEdit_dest_pay->text().replace("\r", ""));
         query->addBindValue(str_null);
@@ -190,15 +235,114 @@ void class_create_pp::slot_create_pp()
             query->clear();
         }
     }
+    else
+    {
+        if (summ != ui->lineEdit_sum->text() or payer_rs != ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()))
+        {
+            query->prepare("UPDATE rss_balans SET balans = (balans + ?) WHERE id = ?");
+            query->addBindValue(summ);
+            query->addBindValue(payer_rs);
+            query->exec();
+            query->clear();
+        }
+        query->prepare("UPDATE pp SET rs_id = ?, type_pp = ?, type_doc = ?, num = ?, date_pp = ?, date_oper = ?, "
+                                        "sum_pp = ?, payer_count = ?, payer = ?, payer_inn = ?, payer1 = ?, "
+                                        "payer2 = ?, payer3 = ?, payer4 = ?, payer_rs = ?, payer_bank1 = ?, "
+                                        "payer_bank2 = ?, payer_bik = ?, payer_ks = ?, receiver_count = ?, "
+                                        "receiver = ?, receiver_inn = ?, receiver1 = ?, receiver2 = ?, "
+                                        "receiver3 = ?, receiver4 = ?, receiver_rs = ?, receiver_bank1 = ?, "
+                                        "receiver_bank2 = ?, receiver_bik = ?, receiver_ks = ?, type_pay = ?, "
+                                        "type_trans = ?, code = ?, dest_pay = ?, dest_pay1 = ?, dest_pay2 = ?, "
+                                        "dest_pay3 = ?, dest_pay4 = ?, dest_pay5 = ?, dest_pay6 = ?, "
+                                        "state_sender = ?, payer_kpp = ?, receiver_kpp = ?, pokazatel_kbk = ?, "
+                                        "okato = ?, pokazatel_osnovaniya = ?, pokazatel_period = ?, "
+                                        "pokazatel_num = ?, pokazatel_date = ?, pokazatel_type = ?, "
+                                        "ocherednost = ?, type_akkred = ?, srok_pay = ?, usl_pay1 = ?, "
+                                        "usl_pay2 = ?, usl_pay3 = ?, pay_po_predst = ?, dop_usl = ?, "
+                                        "num_scheta_postav = ?, date_send_doc = ?, status_pp = ? "
+                       "WHERE id = ?");
+        query->addBindValue(ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()).toString());
+        query->addBindValue("1");
+        query->addBindValue("0");
+        query->addBindValue(ui->lineEdit_pp_num->text());
+        query->addBindValue(ui->dateEdit_date->date());
+        query->addBindValue(ui->dateEdit_date->date());
+        query->addBindValue(ui->lineEdit_sum->text().replace(",", "."));
+        query->addBindValue(count);
+        query->addBindValue(ui->lineEdit_payer->text());
+        query->addBindValue(ui->lineEdit_payer_inn->text());
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(count);
+        query->addBindValue(ui->lineEdit_payer_bank->text());
+        query->addBindValue(ui->lineEdit_payer_bank2->text());
+        query->addBindValue(ui->lineEdit_payer_bik->text());
+        query->addBindValue(ui->lineEdit_payer_ks->text());
+        query->addBindValue(ui->lineEdit_receiver_rs->text());
+        query->addBindValue(ui->lineEdit_receiver->text());
+        query->addBindValue(ui->lineEdit_receiver_inn->text());
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(ui->lineEdit_receiver_rs->text());
+        query->addBindValue(ui->comboBox_receiver_bank->currentText());
+        query->addBindValue(ui->lineEdit_receiver_bank2->text());
+        query->addBindValue(ui->comboBox_receiver_bik->currentText());
+        query->addBindValue(ui->lineEdit_receiver_ks->text());
+        query->addBindValue(str_null);
+        query->addBindValue(ui->comboBox_type_pay->currentText());
+        query->addBindValue(str_null);
+        query->addBindValue(ui->lineEdit_dest_pay->text().replace("\r", ""));
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(ui->lineEdit_payer_kpp->text());
+        query->addBindValue(ui->lineEdit_receiver_kpp->text());
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(QDate::fromString("01.01.1900", "dd.MM.yyyy"));
+        query->addBindValue(str_null);
+        query->addBindValue(ui->comboBox_ocherednost->currentText());
+        query->addBindValue(str_null);
+        query->addBindValue(ui->dateEdit_date->date());
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(str_null);
+        query->addBindValue(ui->dateEdit_date->date());
+        query->addBindValue(0);
+        query->addBindValue(pp_id);
+        if (query->exec())
+        {
+            query->clear();
+            query->prepare("UPDATE rss_balans SET balans = (balans - ?) WHERE id = ?");
+            query->addBindValue(ui->lineEdit_sum->text());
+            query->addBindValue(ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()).toString());
+            query->exec();
+            query->clear();
+        }
+        this->close();
+    }
     slot_clear_form();
-
 }
 
 //Включаем/выключаем кнопку создать платёжку
 void class_create_pp::slot_set_enable_add()
 {
     if (ui->lineEdit_sum->text().replace(" ", "") != "" and ui->comboBox_ocherednost->currentText().replace(" ", "") != ""
-        and ui->comboBox_type_pp->currentText().replace(" ", "") != ""
+        and ui->comboBox_type_pay->currentText().replace(" ", "") != ""
         and ui->lineEdit_payer->text().replace(" ", "") != "" and ui->lineEdit_payer_bank->text().replace(" ", "") != ""
         and ui->lineEdit_payer_bank2->text().replace(" ", "") != "" and (ui->lineEdit_payer_inn->text().length() == 10
                                                         or ui->lineEdit_payer_inn->text().length() == 12)
@@ -208,7 +352,8 @@ void class_create_pp::slot_set_enable_add()
         and (ui->lineEdit_receiver_inn->text().length() == 10 or ui->lineEdit_receiver_inn->text().length() == 12)
         and ui->lineEdit_receiver_rs->text().length() == 20 and ui->lineEdit_receiver_rs->text().length() == 20
         and ui->lineEdit_dest_pay->text().replace(" ", "") != ""
-        and ui->lineEdit_balans_rs->text().toDouble() > ui->lineEdit_sum->text().toDouble() and count_pp <= ui->lineEdit_pp_num->text().toInt())
+        and ui->lineEdit_balans_rs->text().toDouble() > ui->lineEdit_sum->text().toDouble() and ((count_pp <= ui->lineEdit_pp_num->text().toInt() and payer_rs == ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()).toInt())
+        or count_pp <= ui->lineEdit_pp_num->text().toInt() or ui->pushButton_create_pp->text() == "Измеить ПП"))
     {
         ui->pushButton_create_pp->setEnabled(true);
     }
@@ -413,7 +558,7 @@ void class_create_pp::slot_clear_form()
 {
     ui->lineEdit_sum->setText("");
     ui->comboBox_ocherednost->setCurrentIndex(0);
-    ui->comboBox_type_pp->setCurrentIndex(0);
+    ui->comboBox_type_pay->setCurrentIndex(0);
     ui->lineEdit_receiver->setText("");
     ui->lineEdit_receiver_inn->setText("");
     ui->lineEdit_receiver_rs->setText("");
@@ -427,25 +572,32 @@ void class_create_pp::slot_clear_form()
 //Получаем значение счётчика платёжек
 void class_create_pp::slot_get_count_pp()
 {
-    QString count;
-    int id = ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()).toInt();
-    query->prepare("SELECT * FROM count_pp WHERE id = ?");
-    query->addBindValue(id);
-    query->exec();
-    query->first();
-    count = query->value(2).toString();
-    if (query->value(1).toDate() < QDate::currentDate())
-    {
-        query->clear();
-        query->prepare("UPDATE count_pp SET date_count = ?, count_pp = 1 WHERE id = ?");
-        query->addBindValue(QDate(QDate::currentDate().year()+1, 1, 1));
+        QString count;
+        int id = ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()).toInt();
+        query->prepare("SELECT * FROM count_pp WHERE id = ?");
         query->addBindValue(id);
         query->exec();
-        count = "1";
-    }
-    query->clear();
-    ui->lineEdit_pp_num->setText(count);
-    count_pp = count.toInt();
+        query->first();
+        count = query->value(2).toString();
+        if (query->value(1).toDate() < QDate::currentDate())
+        {
+            query->clear();
+            query->prepare("UPDATE count_pp SET date_count = ?, count_pp = 1 WHERE id = ?");
+            query->addBindValue(QDate(QDate::currentDate().year()+1, 1, 1));
+            query->addBindValue(id);
+            query->exec();
+            count = "1";
+        }
+        query->clear();
+        if (payer_rs != ui->comboBox_payer_rs->itemData(ui->comboBox_payer_rs->currentIndex()))
+        {
+            ui->lineEdit_pp_num->setText(count);
+        }
+        else
+        {
+            ui->lineEdit_pp_num->setText(QString::number(count_pp_first));
+        }
+        count_pp = count.toInt();
 }
 
 //Заполняем расчётные счета

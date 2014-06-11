@@ -15,7 +15,7 @@ class class_create_pp : public QWidget
 {
     Q_OBJECT
 public:
-    explicit class_create_pp(QWidget *parent = 0);
+    explicit class_create_pp(QWidget *parent = 0, int id = 0, int type = 0);
 
 signals:
 
@@ -40,11 +40,13 @@ public slots:
     void slot_set_enable_add();
     void slot_create_pp();
     void slot_set_dest_pay();
+    void slot_load_pp();
 
 private:
     Ui::class_create_pp *ui;
     QSqlQuery *query;
-    int count_pp;
+    int count_pp, count_pp_first, pp_id, act_type, payer_rs;
+    QString summ;
 
 };
 

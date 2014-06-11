@@ -15,7 +15,8 @@ general_window::general_window(QWidget *parent, QSqlDatabase *db1) :
     //slot_set_enable_menu(user_id);
 
     i_rs = i_firm = i_client = i_tarif = i_load_pp = i_pp = i_balans_client =
-            i_balans_rs = i_client_pay = i_manage_users = i_report_client = i_auto_actions = i_new_pp = -1;
+            i_balans_rs = i_client_pay = i_manage_users = i_report_client =
+            i_auto_actions = i_new_pp = i_edit_pp = i_copy_pp = -1;
 
     statusBar()->addWidget(&lb);
 
@@ -74,6 +75,7 @@ general_window::general_window(QWidget *parent, QSqlDatabase *db1) :
 
     //Показываем окно создания платёжки
     connect(ui->action_create_new_pp, SIGNAL(triggered()), SLOT(slot_show_create_new_pp()));
+
 }
 
 void general_window::slot_show_update_ref_banks()
@@ -185,6 +187,8 @@ void general_window::slot_del_tab(int index)
     if (ui->tabWidget->tabText(index) == "Отчёт по контрагенту") i_report_client = -1;
     if (ui->tabWidget->tabText(index) == "Автоматические действия") i_auto_actions = -1;
     if (ui->tabWidget->tabText(index) == "Новое платёжное поручение") i_new_pp = -1;
+    if (ui->tabWidget->tabText(index) == "Изменение платёжного поручения") i_edit_pp = -1;
+    if (ui->tabWidget->tabText(index) == "Копируем платёжное поручение") i_copy_pp = -1;
     ui->tabWidget->removeTab(index);
 }
 
@@ -200,6 +204,36 @@ void general_window::slot_show_create_new_pp()
     else
     {
         ui->tabWidget->setCurrentIndex(ui->tabWidget->indexOf(new_pp));
+    }
+}
+
+//Открываем окно редактироваия платёжки
+void general_window::slot_show_edit_pp(int id, int type)
+{
+    if (i_edit_pp == -1)
+    {
+        edit_pp = new class_create_pp(0, id, type);
+        i_edit_pp = ui->tabWidget->addTab(edit_pp, QString("Изменение платёжного поручения"));
+        ui->tabWidget->setCurrentIndex(i_edit_pp);
+    }
+    else
+    {
+        ui->tabWidget->setCurrentIndex(ui->tabWidget->indexOf(edit_pp));
+    }
+}
+
+//Открываем окно копирования платёжки
+void general_window::slot_show_copy_pp(int id, int type)
+{
+    if (i_copy_pp == -1)
+    {
+        copy_pp = new class_create_pp(0, id, type);
+        i_copy_pp = ui->tabWidget->addTab(copy_pp, QString("Копируем платёжное поручение"));
+        ui->tabWidget->setCurrentIndex(i_copy_pp);
+    }
+    else
+    {
+        ui->tabWidget->setCurrentIndex(ui->tabWidget->indexOf(copy_pp));
     }
 }
 
@@ -298,6 +332,12 @@ void general_window::slot_show_ref_pp()
         ui->menu_view->setEnabled(true);
         connect(ui->action_column, SIGNAL(triggered()), pps, SLOT(slot_show_settings_table()));
         connect(pps, SIGNAL(signal_send_sum_pp(QString)), SLOT(slot_set_status_bar_data(QString)));
+
+        //
+        connect(pps, SIGNAL(signal_copy_pp(int,int)), SLOT(slot_show_copy_pp(int,int)));
+
+        //
+        connect(pps, SIGNAL(signal_edit_pp(int,int)), SLOT(slot_show_edit_pp(int,int)));
     }
     else
     {
@@ -409,6 +449,20 @@ void general_window::slot_refresh_tab(int tab)
         if (ui->tabWidget->indexOf(new_pp) == tab)
         {
             new_pp->slot_load_rss();
+        }
+    }
+    if (i_edit_pp > -1)
+    {
+        if (ui->tabWidget->indexOf(edit_pp) == tab)
+        {
+            edit_pp->slot_load_rss();
+        }
+    }
+    if (i_copy_pp > -1)
+    {
+        if (ui->tabWidget->indexOf(copy_pp) == tab)
+        {
+            copy_pp->slot_load_rss();
         }
     }
     if (i_balans_client > -1)

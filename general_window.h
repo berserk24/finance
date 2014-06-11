@@ -58,10 +58,10 @@ private:
     QSqlDatabase *db;
     int i_rs, i_firm, i_client, i_tarif, i_load_pp, i_pp, user_id,
     i_balans_client, i_balans_rs, i_client_pay, i_client_group, i_manage_users,
-    i_balans_group, i_report_client, i_auto_actions, i_new_pp;
+    i_balans_group, i_report_client, i_auto_actions, i_new_pp, i_edit_pp, i_copy_pp;
     class_settings *settings;
     class_update_ref_banks *update_banks;
-    class_create_pp *new_pp;
+    class_create_pp *new_pp, *copy_pp, *edit_pp;
 
 public slots:
     void show_rss_form();
@@ -83,6 +83,8 @@ public slots:
     void slot_show_settings_window();
     void slot_show_update_ref_banks();
     void slot_show_create_new_pp();
+    void slot_show_edit_pp(int id, int type);
+    void slot_show_copy_pp(int id, int type);
     void get_access();
 
 };

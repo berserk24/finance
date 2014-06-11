@@ -59,6 +59,8 @@ public slots:
     void slot_set_settings_header(QList<bool>);
     void slot_sum_balans_rs();
     void slot_show_context_menu(QPoint point);
+    void slot_edit_pp();
+    void slot_copy_pp();
 
 private:
     Ui::class_ref_pp *ui;
@@ -87,6 +89,8 @@ private:
 signals:
     void show_ref_client();
     void signal_send_sum_pp(QString);
+    void signal_edit_pp(int, int);
+    void signal_copy_pp(int, int);
 };
 
 #endif // CLASS_REF_PP_H
