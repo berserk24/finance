@@ -111,10 +111,17 @@ void class_ref_pp::slot_edit_pp()
 //Показываем контекстное меню
 void class_ref_pp::slot_show_context_menu(QPoint point)
 {
-    if (ui->tableView->selectionModel()->selectedIndexes().size() == 17 and ui->tableView->selectionModel()->selectedIndexes().at(3).data().toString() == "Расход" and ui->tableView->selectionModel()->selectedIndexes().at(9).data().toString() == "Платежное поручение")
+    if (ui->tableView->selectionModel()->selectedIndexes().size() == 17 and ui->tableView->selectionModel()->selectedIndexes().at(3).data().toString() == "Расход" and ui->tableView->selectionModel()->selectedIndexes().at(9).data().toString() == "Платежное поручение" and ui->tableView->selectionModel()->selectedIndexes().at(16).data().toString() == "Новый")
     {
         action_copy->setEnabled(true);
         action_edit->setEnabled(true);
+        action_del->setEnabled(true);
+        context_menu->exec(ui->tableView->mapToGlobal(point + QPoint(20,40)));
+    }
+    if (ui->tableView->selectionModel()->selectedIndexes().size() == 17 and ui->tableView->selectionModel()->selectedIndexes().at(3).data().toString() == "Расход" and ui->tableView->selectionModel()->selectedIndexes().at(9).data().toString() == "Платежное поручение" and ui->tableView->selectionModel()->selectedIndexes().at(16).data().toString() != "Новый")
+    {
+        action_copy->setEnabled(true);
+        action_edit->setEnabled(false);
         action_del->setEnabled(true);
         context_menu->exec(ui->tableView->mapToGlobal(point + QPoint(20,40)));
     }
