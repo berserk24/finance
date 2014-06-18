@@ -7,6 +7,7 @@ class_settings::class_settings(QWidget *parent) :
 {
     ui->setupUi(this);
 
+
     settings = new QSettings(QSettings::UserScope, "finance", "finance", this);
 
     slot_get_settings();
