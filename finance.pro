@@ -94,13 +94,16 @@ FORMS    += widget.ui \
 RESOURCES += \
     language.qrc
 
-unix:!macx: LIBS += -L$$PWD/../../qdbf/src/build-src-Desktop-Release/lib/ -lQDbf
 
-INCLUDEPATH += $$PWD/../../qdbf/src/src
-DEPENDPATH += $$PWD/../../qdbf/src/src
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/release/ -lQDbf
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/debug/ -lQDbf
+else:unix:!macx: LIBS += -L$$PWD/ -lQDbf
 
+INCLUDEPATH += $$PWD/
+DEPENDPATH += $$PWD/
 
-win32: LIBS += -L$$PWD/../qdbf/build-qdbf-Desktop_Qt_5_2_1_MinGW_32bit-Release/lib/ -lQDbf
-
-INCLUDEPATH += $$PWD/../qdbf/build-qdbf-Desktop_Qt_5_2_1_MinGW_32bit-Release
-DEPENDPATH += $$PWD/../qdbf/build-qdbf-Desktop_Qt_5_2_1_MinGW_32bit-Release
+win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/release/libQDbf.a
+else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/debug/libQDbf.a
+else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/release/QDbf.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/debug/QDbf.lib
+else:unix:!macx: PRE_TARGETDEPS += $$PWD/libQDbf.a
